@@ -11,11 +11,13 @@ import win32con
 from Tray import TrayIcon
 
 # Constants - Colours
-WARNING = 'red'
+WARNING_BOTTOM = 'red'
+WARNING_UPPER = '#ffce1f'
 TEXT = 'white'
 BACKGROUND = '#292929'
 # Treshold = constant for now
-TRESHOLD = 70
+TRESHOLD_BOTTOM = 70
+TRESHOLD_UPPER = 250
 
 class Widget:
   def __init__(self, dex_api: DexcomApi) -> None:
@@ -68,7 +70,11 @@ class Widget:
     self._root.geometry(f'250x150-{x}-{y}')
     
     # If the glucose level is below the treshold, make it display in the warning colour
-    colour = TEXT if self._glucose_value.get() == '---' or int(self._glucose_value.get()) > TRESHOLD else WARNING
+    colour = TEXT
+    if(self._glucose_value.get() != '---' and int(self._glucose_value.get()) <= TRESHOLD_BOTTOM):
+      colour = WARNING_BOTTOM
+    if(self._glucose_value.get() != '---' and int(self._glucose_value.get()) >= TRESHOLD_UPPER):
+      colour = WARNING_UPPER
     
     # Frames
     self._frame_wrapper = tk.Frame(self._root, background=BACKGROUND)
@@ -135,7 +141,9 @@ class Widget:
   def _on_update(self, _):
     glucose_value = self._glucose_value.get()
     trend = self._trend.get()
-    colour = TEXT if int(glucose_value) > TRESHOLD else WARNING
+    colour = TEXT
+    if(int(glucose_value) <= TRESHOLD_BOTTOM): colour = WARNING_BOTTOM
+    if(int(glucose_value) >= TRESHOLD_UPPER): colour = WARNING_UPPER
     
     self._glucose_value_label.config(fg=colour)
     
