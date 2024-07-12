@@ -6,20 +6,21 @@ load_dotenv()
 from pydexcom import Dexcom
 # Threading
 import threading
-# Types
+# Types and dataclasses
 from typing import Callable
-# Error Handling
-from urllib.error import HTTPError
+from dataclasses import dataclass
+# # Error Handling
+# from urllib.error import HTTPError
 
 
 USERNAME = os.getenv('USERNAME')
 PASSWORD = os.getenv('PASSWORD')
 
 # Dexcom Data Object Class
+@dataclass
 class DexcomData:
-  def __init__(self, glucose_reading, trend) -> None:
-    self.glucose_reading = glucose_reading
-    self.trend = trend
+    glucose_reading: str
+    trend: str
     
 # Class providing connection to Dexcom Share API
 class DexcomApi:
