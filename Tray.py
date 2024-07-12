@@ -18,7 +18,7 @@ def create_image(width, height, color1, color2):
 
 # Class for managing the tray icon
 class TrayIcon:
-  def __init__(self, generate_close_event: Callable[[],None], generate_enable_drag_event: Callable[[],None], generate_disable_drag_event: Callable[[],None]) -> None:
+  def __init__(self, generate_close_event: Callable[[],None], generate_enable_drag_event: Callable[[],None], generate_disable_drag_event: Callable[[],None], reset_window_position: Callable[[], None]) -> None:
     self._generate_close_event = generate_close_event
     self._generate_enable_drag_event = generate_enable_drag_event
     self._generate_disable_drag_event = generate_disable_drag_event
@@ -29,6 +29,11 @@ class TrayIcon:
         'Draggable',
         self._toggle_drag,
         checked= lambda item: self._draggable
+    ),
+      pystray.MenuItem(
+        'Reset Position',
+        reset_window_position,
+        checked=None
     ),
       pystray.MenuItem(
         'Close',

@@ -4,11 +4,16 @@ import tksvg
 from SvgTrends import get_trend_arrow_SVG
 # Dexcom Api
 from DexcomApi import DexcomApi, GlucoseFetcher
-# Clicktrough-hacking
+# Clicktrough-hacking - win32
 import win32gui
 import win32con
+# Config Parser
+from configparser import ConfigParser
 # Tray icon
 from Tray import TrayIcon
+# Typing
+from typing import Literal
+
 
 # Constants - Colours
 WARNING_BOTTOM = 'red'
@@ -19,24 +24,38 @@ BACKGROUND = '#292929'
 TRESHOLD_BOTTOM = 70
 TRESHOLD_UPPER = 250
 
+SIZE = {
+  'SMALL': (180,108),
+  'NORMAL': (250,150),
+  'LARGE': (0,0)
+}
+
 class Widget:
   def __init__(self, dex_api: DexcomApi) -> None:
     self._root = tk.Tk()
     
-    self._moveable = False
-
+    # Initialise config parser
+    self._config = ConfigParser()
+    self._config.read('settings.ini')
+    
+    # Settings
+    self._moveable: bool = False
+    self._size: Literal['SMALL', 'NORMAL', 'LARGE'] = self._config['settings']['size']
+    self._interval = int(self._config['settings']['interval'])
+    
     # Dexcom API
     self._dex_api = dex_api
+
     # Initialise default reading values
     self._glucose_value = tk.StringVar(value='---')
     self._trend = tk.IntVar(value=0)
     self._units = tk.StringVar(value='mg/dL')
     # Initialise glucose fetching loop
-    self._glucose_fetcher = GlucoseFetcher(self._dex_api, 60 ,self._generate_failed_event, self._generate_udpate_event)
+    self._glucose_fetcher = GlucoseFetcher(self._dex_api, self._interval ,self._generate_failed_event, self._generate_udpate_event)
     self._glucose_fetcher.start_fetch_loop()
     # Initialise the widget and start mainloop
     self._setup_widget()
-    self._tray_icon = TrayIcon(self._generate_close_event, self._generate_enable_drag_event, self._generate_disable_drag_event)
+    self._tray_icon = TrayIcon(self._generate_close_event, self._generate_enable_drag_event, self._generate_disable_drag_event, self._reset_position)
     self._tray_icon.run_tray_icon()
     self._root.mainloop()
 
@@ -62,14 +81,24 @@ class Widget:
     self._enable_clicktrough(init=True)
     
     # Position the window
-    windowWidth = self._root.winfo_width()
-    windowHeight = self._root.winfo_height()
-    x = windowWidth + 15
-    y = 75
+    screen_width = self._root.winfo_screenwidth()
+    screen_height = self._root.winfo_screenheight()
+    window_width,window_height = SIZE[self._config['settings']['size']]
     
-    self._root.geometry(f'250x150-{x}-{y}')
+    if(self._config['position']['x'] != '' and self._config['position']['y'] != ''):
+      self._root.geometry(f'{window_width}x{window_height}+{self._config['position']['x']}+{self._config['position']['y']}' )
+    else:
+      x = screen_width - window_width
+      y = screen_height - window_height -50
+      self._root.geometry(f'{window_width}x{window_height}+{x}+{y}')
+      self._config['position'] = {
+        'x': str(x),
+        'y': str(y)
+      }
+      with open('settings.ini', 'w') as configfile:
+        self._config.write(configfile)
     
-    # If the glucose level is below the treshold, make it display in the warning colour
+    # Set text colour
     colour = TEXT
     if(self._glucose_value.get() != '---' and int(self._glucose_value.get()) <= TRESHOLD_BOTTOM):
       colour = WARNING_BOTTOM
@@ -176,6 +205,13 @@ class Widget:
 
   def _on_stop_move(self,_):
     if(self._moveable):
+      self._config['position'] = {
+        'x': str(self._root.winfo_x()),
+        'y': str(self._root.winfo_y())
+      }
+      with open('settings.ini', 'w') as configfile:
+        self._config.write(configfile)
+      
       self._root.x = None
       self._root.y = None
     
@@ -208,6 +244,22 @@ class Widget:
     
   def _generate_disable_drag_event(self):
     self._root.event_generate('<<Stop_Drag>>',when='now')
+  
+  def _reset_position(self):
+    screenWidth = self._root.winfo_screenwidth()
+    screenHeight = self._root.winfo_screenheight()
+    windowWidth, windowHeight = SIZE[self._config['settings']['size']]
+    
+    x = screenWidth - windowWidth
+    y = screenHeight- windowHeight - 50
+    self._root.geometry(f'{windowWidth}x{windowHeight}+{x}+{y}')
+    self._config['position'] = {
+      'x': x,
+      'y': y
+    }
+    
+    with open('settings.ini', 'w') as configfile:
+      self._config.write(configfile)
 
 
 # Testing initialisation
