@@ -2,6 +2,7 @@ import tkinter as tk
 from PIL import Image, ImageDraw
 import pystray
 from typing import Callable
+from dataclasses import dataclass
 
 # Placeholder Image from pystray documentation
 def create_image(width, height, color1, color2):
@@ -15,13 +16,18 @@ def create_image(width, height, color1, color2):
         (0, height // 2, width // 2, height),
         fill=color2)
     return image
+  
+@dataclass
+class TrayCallbacks:
+  generate_close_event: Callable[[],None]
+  generate_enable_drag_event: Callable[[],None]
+  generate_disable_drag_event: Callable[[],None]
+  reset_window_position: Callable[[], None]
 
 # Class for managing the tray icon
 class TrayIcon:
-  def __init__(self, generate_close_event: Callable[[],None], generate_enable_drag_event: Callable[[],None], generate_disable_drag_event: Callable[[],None], reset_window_position: Callable[[], None]) -> None:
-    self._generate_close_event = generate_close_event
-    self._generate_enable_drag_event = generate_enable_drag_event
-    self._generate_disable_drag_event = generate_disable_drag_event
+  def __init__(self, callbacks: TrayCallbacks) -> None:
+    self._callbacks = callbacks
     self._draggable = False
     
     menu = pystray.Menu(
@@ -32,7 +38,7 @@ class TrayIcon:
     ),
       pystray.MenuItem(
         'Reset Position',
-        reset_window_position,
+        self._callbacks.reset_window_position,
         checked=None
     ),
       pystray.MenuItem(
@@ -45,7 +51,7 @@ class TrayIcon:
     self._tray = pystray.Icon('Dextop', icon=create_image(64, 64, 'black', 'white'), menu=menu)
   
   def _close_tray(self):
-    self._generate_close_event()
+    self._callbacks.generate_close_event()
     self._tray.stop()
   
   def _toggle_drag(self):
@@ -53,9 +59,9 @@ class TrayIcon:
     self._tray.update_menu()  
     
     if(self._draggable):
-      self._generate_enable_drag_event()
+      self._callbacks.generate_enable_drag_event()
     else:
-      self._generate_disable_drag_event()
+      self._callbacks.generate_disable_drag_event()
   
   def run_tray_icon(self):
     self._tray.run_detached()

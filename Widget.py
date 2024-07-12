@@ -10,9 +10,9 @@ import win32con
 # Config Parser
 from configparser import ConfigParser
 # Tray icon
-from Tray import TrayIcon
+from Tray import TrayIcon, TrayCallbacks
 # Typing
-from typing import Literal
+from typing import Literal, Callable
 
 
 # Constants - Colours
@@ -55,8 +55,7 @@ class Widget:
     self._glucose_fetcher.start_fetch_loop()
     # Initialise the widget and start mainloop
     self._setup_widget()
-    self._tray_icon = TrayIcon(self._generate_close_event, self._generate_enable_drag_event, self._generate_disable_drag_event, self._reset_position)
-    self._tray_icon.run_tray_icon()
+    self._setup_tray()
     self._root.mainloop()
 
   def _setup_widget(self) -> None:
@@ -245,7 +244,7 @@ class Widget:
   def _generate_disable_drag_event(self):
     self._root.event_generate('<<Stop_Drag>>',when='now')
   
-  def _reset_position(self):
+  def _reset_window_position(self):
     screenWidth = self._root.winfo_screenwidth()
     screenHeight = self._root.winfo_screenheight()
     windowWidth, windowHeight = SIZE[self._config['settings']['size']]
@@ -261,7 +260,16 @@ class Widget:
     with open('settings.ini', 'w') as configfile:
       self._config.write(configfile)
 
-
+  def _setup_tray(self):
+    callbacks = TrayCallbacks(
+      self._generate_close_event,
+      self._generate_enable_drag_event,
+      self._generate_disable_drag_event,
+      self._reset_window_position
+    )
+    self._tray_icon = TrayIcon(callbacks)
+    self._tray_icon.run_tray_icon()
+    
 # Testing initialisation
 dex_api = DexcomApi(True)
 test = Widget(dex_api)
