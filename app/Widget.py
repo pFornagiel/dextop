@@ -1,46 +1,32 @@
 # GUI
 import tkinter as tk
 import tksvg
-from SvgTrends import get_trend_arrow_SVG
+from .SvgTrends import get_trend_arrow_SVG
 # Dexcom Api
-from DexcomApi import DexcomApi, GlucoseFetcher
+from .DexcomApi import DexcomApi, GlucoseFetcher
 # Clicktrough-hacking - win32
 import win32gui
 import win32con
 # Config Parser
 from configparser import ConfigParser
 # Tray icon
-from Tray import TrayIcon, TrayCallbacks
+from .Tray import TrayIcon, TrayCallbacks
 # Typing
-from typing import Literal, Callable
-
-
-# Constants - Colours
-WARNING_BOTTOM = 'red'
-WARNING_UPPER = '#ffce1f'
-TEXT = 'white'
-BACKGROUND = '#292929'
-# Treshold = constant for now
-TRESHOLD_BOTTOM = 70
-TRESHOLD_UPPER = 250
-
-SIZE = {
-  'SMALL': (180,108),
-  'NORMAL': (250,150),
-  'LARGE': (0,0)
-}
+from typing import Literal
+# Constants
+from .Consts import *
 
 class Widget:
   def __init__(self, dex_api: DexcomApi) -> None:
     self._root = tk.Tk()
-    
+  
     # Initialise config parser
     self._config = ConfigParser()
-    self._config.read('settings.ini')
+    self._config.read('app/settings.ini')
     
     # Settings
     self._moveable: bool = False
-    self._size: Literal['SMALL', 'NORMAL', 'LARGE'] = self._config['settings']['size']
+    self._size_config: Sizing = SIZE[self._config['settings']['size']]
     self._interval = int(self._config['settings']['interval'])
     
     # Dexcom API
@@ -79,10 +65,11 @@ class Widget:
     # Unclickability
     self._enable_clicktrough(init=True)
     
+    # Get proper size-related attirbutes
+    
     # Position the window
-    screen_width = self._root.winfo_screenwidth()
-    screen_height = self._root.winfo_screenheight()
-    window_width,window_height = SIZE[self._config['settings']['size']]
+    screen_width, screen_height = self._root.winfo_screenwidth(), self._root.winfo_screenheight()
+    window_width, window_height =  self._size_config.window
     
     if(self._config['position']['x'] != '' and self._config['position']['y'] != ''):
       self._root.geometry(f'{window_width}x{window_height}+{self._config['position']['x']}+{self._config['position']['y']}' )
@@ -103,6 +90,9 @@ class Widget:
       colour = WARNING_BOTTOM
     if(self._glucose_value.get() != '---' and int(self._glucose_value.get()) >= TRESHOLD_UPPER):
       colour = WARNING_UPPER
+      
+    # Get text-related size configs
+    glucose_size, unit_size, svg_size = self._size_config.font_glucose, self._size_config.font_units, self._size_config.svg
     
     # Frames
     self._frame_wrapper = tk.Frame(self._root, background=BACKGROUND)
@@ -114,12 +104,14 @@ class Widget:
       self._frame1,
       textvariable=self._glucose_value, 
       padx=10, 
-      font=('Inter',45),
+      font=('Inter',glucose_size),
       fg=colour,
       background=BACKGROUND)
     
     # Trend arrow label displaying SVG
-    svg = tksvg.SvgImage(data=get_trend_arrow_SVG(self._trend.get(),colour))
+    svg = tksvg.SvgImage(data=get_trend_arrow_SVG(self._trend.get(), colour, svg_size))
+    
+    # svg = ImageTk.getimage(svg)
     self._trend_label = tk.Label(
       self._frame1, 
       image=svg, 
@@ -134,7 +126,7 @@ class Widget:
       self._frame2,
       textvariable=self._units,
       padx=15, 
-      font=('Inter',15),
+      font=('Inter',unit_size),
       fg=colour,
       background=BACKGROUND)
     
@@ -175,7 +167,7 @@ class Widget:
     
     self._glucose_value_label.config(fg=colour)
     
-    svg = tksvg.SvgImage(data=get_trend_arrow_SVG(trend,colour))
+    svg = tksvg.SvgImage(data=get_trend_arrow_SVG(trend,colour,self._size_config.svg))
     self._trend_label.config(image=svg)
     self._trend_label.image = svg
     
@@ -183,7 +175,7 @@ class Widget:
   
   def _on_fail(self,_):
     self._glucose_value_label.config(fg=TEXT)
-    svg = tksvg.SvgImage(data=get_trend_arrow_SVG(0,TEXT))
+    svg = tksvg.SvgImage(data=get_trend_arrow_SVG(0,TEXT, self._size_config.svg))
     self._trend_label.config(image=svg)
     self._trend_label.image = svg
     
@@ -245,13 +237,11 @@ class Widget:
     self._root.event_generate('<<Stop_Drag>>',when='now')
   
   def _reset_window_position(self):
-    screenWidth = self._root.winfo_screenwidth()
-    screenHeight = self._root.winfo_screenheight()
-    windowWidth, windowHeight = SIZE[self._config['settings']['size']]
+    screen_width, screen_height = self._root.winfo_screenwidth(), self._root.winfo_screenheight()
+    window_width, window_height = SIZE[self._config['settings']['size']]
     
-    x = screenWidth - windowWidth
-    y = screenHeight- windowHeight - 50
-    self._root.geometry(f'{windowWidth}x{windowHeight}+{x}+{y}')
+    x,y = screen_width - window_width, screen_height- window_height - 50
+    self._root.geometry(f'{window_width}x{window_height}+{x}+{y}')
     self._config['position'] = {
       'x': x,
       'y': y
@@ -270,6 +260,3 @@ class Widget:
     self._tray_icon = TrayIcon(callbacks)
     self._tray_icon.run_tray_icon()
     
-# Testing initialisation
-dex_api = DexcomApi(True)
-test = Widget(dex_api)
