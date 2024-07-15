@@ -34,6 +34,8 @@ WARNING_BOTTOM = 'red'
 WARNING_UPPER = '#ffce1f'
 TEXT = 'white'
 BACKGROUND = '#292929'
-# Treshold = constant for now
+# Positioning
+TASKBAR_OFFSET = 50
+# Treshold, constant for now
 TRESHOLD_BOTTOM = 70
 TRESHOLD_UPPER = 250
