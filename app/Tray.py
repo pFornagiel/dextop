@@ -1,10 +1,11 @@
-import tkinter as tk
-from PIL import Image, ImageDraw
+# Pystray
 import pystray
+# Typing and utils
 from typing import Callable
 from dataclasses import dataclass
 
 # Placeholder Image from pystray documentation
+from PIL import Image, ImageDraw
 def create_image(width, height, color1, color2):
     # Generate an image and draw a pattern
     image = Image.new('RGB', (width, height), color1)
@@ -30,7 +31,10 @@ class TrayIcon:
     self._callbacks = callbacks
     self._draggable = False
     
-    menu = pystray.Menu(
+    self._tray = pystray.Icon('Dextop', icon=create_image(64, 64, 'black', 'white'), menu=self._initialise_menu())
+    
+  def _initialise_menu(self):
+    return pystray.Menu(
       pystray.MenuItem(
         'Draggable',
         self._toggle_drag,
@@ -47,8 +51,6 @@ class TrayIcon:
         checked=None
       ) 
     )
-    
-    self._tray = pystray.Icon('Dextop', icon=create_image(64, 64, 'black', 'white'), menu=menu)
   
   def _close_tray(self):
     self._callbacks.generate_close_event()

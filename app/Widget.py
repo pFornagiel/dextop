@@ -11,45 +11,67 @@ import win32con
 from configparser import ConfigParser
 # Tray icon
 from .Tray import TrayIcon, TrayCallbacks
-# Typing
-from typing import Literal
+# Typing and utility
+
+from dataclasses import dataclass
+
 # Constants
 from .Consts import *
+
+@dataclass
+class Position:
+  x: int
+  y: int
 
 class Widget:
   def __init__(self, dex_api: DexcomApi) -> None:
     self._root = tk.Tk()
+    self._dex_api = dex_api
+    self._initialise_settings()
+    self._initialise_GUI_value_display()
+    self._initialise_glucose_fetching()
+    self._initialise_widget()
+    self._initialise_tray()
+    self._root.mainloop()
   
-    # Initialise config parser
+  def _initialise_settings(self) -> None:
     self._config = ConfigParser()
     self._config.read('app/settings.ini')
-    
-    # Settings
-    self._moveable: bool = False
     self._size_config: Sizing = SIZE[self._config['settings']['size']]
-    self._interval = int(self._config['settings']['interval'])
-    
-    # Dexcom API
-    self._dex_api = dex_api
-
-    # Initialise default reading values
+    self._interval: int = int(self._config['settings']['interval'])
+    self._position: Position = Position(
+      x = int(self._config['position']['x']),
+      y = int(self._config['position']['y'])
+    )
+    self._moveable: bool = False
+  
+  def _initialise_glucose_fetching(self) -> None:
+    self._glucose_fetcher = GlucoseFetcher(self._dex_api, self._interval ,self._generate_failed_event, self._generate_udpate_event)
+    self._glucose_fetcher.start_fetch_loop()
+  
+  def _initialise_GUI_value_display(self) -> None:
     self._glucose_value = tk.StringVar(value='---')
     self._trend = tk.IntVar(value=0)
     self._units = tk.StringVar(value='mg/dL')
-    # Initialise glucose fetching loop
-    self._glucose_fetcher = GlucoseFetcher(self._dex_api, self._interval ,self._generate_failed_event, self._generate_udpate_event)
-    self._glucose_fetcher.start_fetch_loop()
-    # Initialise the widget and start mainloop
-    self._setup_widget()
-    self._setup_tray()
-    self._root.mainloop()
+    
+  def _initialise_tray(self):
+    callbacks = TrayCallbacks(
+      self._generate_close_event,
+      self._generate_enable_drag_event,
+      self._generate_disable_drag_event,
+      self._reset_window_position
+    )
+    self._tray_icon = TrayIcon(callbacks)
+    self._tray_icon.run_tray_icon()
+    
 
-  def _setup_widget(self) -> None:
+  def _initialise_widget(self) -> None:
     '''initialise widget's attributes'''
     self._root.title("Dextop")
     self._root.configure(background=BACKGROUND)
     self._root.attributes('-alpha',0.7,"-topmost", True)
     self._root.overrideredirect(True)
+    self._enable_clicktrough(init=True)
     
     # Protocols and binds
     self._root.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -58,39 +80,27 @@ class Widget:
     self._root.bind('<<Failed>>', self._on_fail)
     self._root.bind('<<Start_Drag>>', self._on_enable_drag)
     self._root.bind('<<Stop_Drag>>', self._on_disable_drag)
-    self._root.bind("<ButtonPress-1>", self._on_start_move)
-    self._root.bind("<ButtonRelease-1>", self._on_stop_move)
+    self._root.bind("<ButtonPress-1>", self._on_start_drag)
+    self._root.bind("<ButtonRelease-1>", self._on_stop_drag)
     self._root.bind("<B1-Motion>", self._on_drag)
-    
-    # Unclickability
-    self._enable_clicktrough(init=True)
-    
-    # Get proper size-related attirbutes
     
     # Position the window
     screen_width, screen_height = self._root.winfo_screenwidth(), self._root.winfo_screenheight()
     window_width, window_height =  self._size_config.window
-    
-    if(self._config['position']['x'] != '' and self._config['position']['y'] != ''):
-      self._root.geometry(f'{window_width}x{window_height}+{self._config['position']['x']}+{self._config['position']['y']}' )
-    else:
-      x = screen_width - window_width
-      y = screen_height - window_height -50
-      self._root.geometry(f'{window_width}x{window_height}+{x}+{y}')
+      
+    if(self._position.x == '' or self._position.y == ''):
+      self._position.x, self._position.y = screen_width - window_width, screen_height - window_height - TASKBAR_OFFSET
       self._config['position'] = {
-        'x': str(x),
-        'y': str(y)
+        'x': str(self._position.x),
+        'y': str(self._position.y)
       }
-      with open('settings.ini', 'w') as configfile:
+      with open('app/settings.ini', 'w') as configfile:
         self._config.write(configfile)
+        
+    self._root.geometry(f'{window_width}x{window_height}+{self._position.x}+{self._position.y}')
     
     # Set text colour
-    colour = TEXT
-    if(self._glucose_value.get() != '---' and int(self._glucose_value.get()) <= TRESHOLD_BOTTOM):
-      colour = WARNING_BOTTOM
-    if(self._glucose_value.get() != '---' and int(self._glucose_value.get()) >= TRESHOLD_UPPER):
-      colour = WARNING_UPPER
-      
+    colour = self._get_colour()
     # Get text-related size configs
     glucose_size, unit_size, svg_size = self._size_config.font_glucose, self._size_config.font_units, self._size_config.svg
     
@@ -159,11 +169,8 @@ class Widget:
     self._root.destroy()
   
   def _on_update(self, _):
-    glucose_value = self._glucose_value.get()
     trend = self._trend.get()
-    colour = TEXT
-    if(int(glucose_value) <= TRESHOLD_BOTTOM): colour = WARNING_BOTTOM
-    if(int(glucose_value) >= TRESHOLD_UPPER): colour = WARNING_UPPER
+    colour = self._get_colour()
     
     self._glucose_value_label.config(fg=colour)
     
@@ -189,18 +196,19 @@ class Widget:
     self._enable_clicktrough()
     self._moveable = False
     
-  def _on_start_move(self,event):
+  def _on_start_drag(self,event):
     if(self._moveable):
       self._root.x = event.x
       self._root.y = event.y
 
-  def _on_stop_move(self,_):
+  def _on_stop_drag(self,_):
     if(self._moveable):
+      self._position.x, self._position.y = self._root.winfo_x(), self._root.winfo_y()
       self._config['position'] = {
-        'x': str(self._root.winfo_x()),
-        'y': str(self._root.winfo_y())
+        'x': str(self._position.x),
+        'y': str(self._position.y)
       }
-      with open('settings.ini', 'w') as configfile:
+      with open('app/settings.ini', 'w') as configfile:
         self._config.write(configfile)
       
       self._root.x = None
@@ -228,35 +236,33 @@ class Widget:
     print(f'An error has occured: {error}')
   
   def _generate_close_event(self):
-    self._root.event_generate("<<Close>>",when='now')
+    self._root.event_generate("<<Close>>", when='now')
     
   def _generate_enable_drag_event(self):
-    self._root.event_generate('<<Start_Drag>>',when='now')
+    self._root.event_generate('<<Start_Drag>>', when='now')
     
   def _generate_disable_drag_event(self):
-    self._root.event_generate('<<Stop_Drag>>',when='now')
+    self._root.event_generate('<<Stop_Drag>>', when='now')
   
   def _reset_window_position(self):
     screen_width, screen_height = self._root.winfo_screenwidth(), self._root.winfo_screenheight()
-    window_width, window_height = SIZE[self._config['settings']['size']]
+    window_width, window_height = self._size_config.window
+    self._position.x,self._position.y = screen_width - window_width, screen_height- window_height - TASKBAR_OFFSET
     
-    x,y = screen_width - window_width, screen_height- window_height - 50
-    self._root.geometry(f'{window_width}x{window_height}+{x}+{y}')
+    self._root.geometry(f'+{self._position.x}+{self._position.y}')
     self._config['position'] = {
-      'x': x,
-      'y': y
+      'x': self._position.x,
+      'y': self._position.y
     }
     
-    with open('settings.ini', 'w') as configfile:
+    with open('app/settings.ini', 'w') as configfile:
       self._config.write(configfile)
-
-  def _setup_tray(self):
-    callbacks = TrayCallbacks(
-      self._generate_close_event,
-      self._generate_enable_drag_event,
-      self._generate_disable_drag_event,
-      self._reset_window_position
-    )
-    self._tray_icon = TrayIcon(callbacks)
-    self._tray_icon.run_tray_icon()
-    
+      
+  def _get_colour(self):
+    glucose_value = self._glucose_value.get()
+    colour = TEXT
+    if(glucose_value != '---' and int(glucose_value) <= TRESHOLD_BOTTOM):
+      colour = WARNING_BOTTOM
+    if(glucose_value != '---' and int(glucose_value) >= TRESHOLD_UPPER):
+      colour = WARNING_UPPER
+    return colour
