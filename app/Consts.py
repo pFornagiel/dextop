@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Tuple
+import os
 
 @dataclass
 class Sizing:
@@ -39,3 +40,4 @@ TASKBAR_OFFSET = 50
 # Treshold, constant for now
 TRESHOLD_BOTTOM = 70
 TRESHOLD_UPPER = 250
+SETTINGS_PATH = os.path.join(os.getcwd(), 'app/settings.ini')

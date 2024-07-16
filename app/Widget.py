@@ -36,7 +36,7 @@ class Widget:
   
   def _initialise_settings(self) -> None:
     self._config = ConfigParser()
-    self._config.read('app/settings.ini')
+    self._config.read(SETTINGS_PATH)
     self._size_config: Sizing = SIZE[self._config['settings']['size']]
     self._interval: int = int(self._config['settings']['interval'])
     self._position: Position = Position(
@@ -94,7 +94,7 @@ class Widget:
         'x': str(self._position.x),
         'y': str(self._position.y)
       }
-      with open('app/settings.ini', 'w') as configfile:
+      with open(SETTINGS_PATH, 'w') as configfile:
         self._config.write(configfile)
         
     self._root.geometry(f'{window_width}x{window_height}+{self._position.x}+{self._position.y}')
@@ -208,7 +208,7 @@ class Widget:
         'x': str(self._position.x),
         'y': str(self._position.y)
       }
-      with open('app/settings.ini', 'w') as configfile:
+      with open(SETTINGS_PATH, 'w') as configfile:
         self._config.write(configfile)
       
       self._root.x = None
@@ -255,7 +255,7 @@ class Widget:
       'y': self._position.y
     }
     
-    with open('app/settings.ini', 'w') as configfile:
+    with open(SETTINGS_PATH, 'w') as configfile:
       self._config.write(configfile)
       
   def _get_colour(self):
