@@ -1,32 +1,29 @@
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Literal
 import os
 
 @dataclass
 class Sizing:
+  size: Literal['NORMAL', 'LARGE']
   font_glucose: int
   font_units: int
   svg: int
   window: Tuple[int,int]
   
 SIZE = {
-  'SMALL': Sizing(
+  'NORMAL': Sizing(
+    size = 'NORMAL',
     font_glucose=30,
     font_units= 10,
     svg=40,
-    window=(180,108)
+    window=(150,100)
   ),
-  'NORMAL': Sizing(
+  'LARGE': Sizing(
+    size = 'LARGE',
     font_glucose=40,
     font_units= 15,
     svg=70,
-    window=(250,150)
-  ),
-  'LARGE': Sizing(
-    font_glucose=50,
-    font_units= 20,
-    svg=90,
-    window=(250,150)
+    window=(220,140)
   )
 }
 
