@@ -59,9 +59,10 @@ class Widget:
       self._generate_close_event,
       self._generate_enable_drag_event,
       self._generate_disable_drag_event,
-      self._reset_window_position
+      self._reset_window_position,
+      self._generate_resize_event
     )
-    self._tray_icon = TrayIcon(callbacks)
+    self._tray_icon = TrayIcon(callbacks, self._size_config.size)
     self._tray_icon.run_tray_icon()
     
 
@@ -83,6 +84,9 @@ class Widget:
     self._root.bind("<ButtonPress-1>", self._on_start_drag)
     self._root.bind("<ButtonRelease-1>", self._on_stop_drag)
     self._root.bind("<B1-Motion>", self._on_drag)
+    # self._root.bind("<<Resize>>", lambda event: event_handler(event, event.widget.event_info["data"].arg1, event.widget.event_info["data"].arg2))
+    self._root.bind("<<Resize>>", self._on_resize)
+
     
     # Position the window
     screen_width, screen_height = self._root.winfo_screenwidth(), self._root.winfo_screenheight()
@@ -216,11 +220,28 @@ class Widget:
     
   def _on_drag(self,event):
     if(self._moveable):
-      deltax = event.x - self._root.x
-      deltay = event.y - self._root.y
-      x = self._root.winfo_x() + deltax
-      y = self._root.winfo_y() + deltay
-      self._root.geometry(f"+{x}+{y}")
+      delta_x = event.x - self._root.x
+      delta_y = event.y - self._root.y
+      x = self._root.winfo_x() + delta_x
+      y = self._root.winfo_y() + delta_y
+      window_width,window_height =self._size_config.window
+      self._root.geometry(f"{window_width}x{window_height}+{x}+{y}")
+    
+  def _on_resize(self,_):
+    window_width, window_height = self._size_config.window
+    self._root.geometry(f'{window_width}x{window_height}')
+    self._glucose_value_label.configure(font=('Inter',self._size_config.font_glucose))
+    self._unit_label.configure(font=('Inter',self._size_config.font_units))
+    
+    svg = tksvg.SvgImage(data=get_trend_arrow_SVG((self._trend.get()),self._get_colour(),self._size_config.svg))
+    self._trend_label.config(image=svg)
+    self._trend_label.image = svg
+    
+    self._root.update_idletasks()
+    
+    self._config['settings']['size'] = self._size_config.size
+    with open(SETTINGS_PATH, 'w') as config_file:
+      self._config.write(config_file)
   
   # Event generating methods
   def _generate_udpate_event(self,glucose_value:str, trend:int):
@@ -243,6 +264,10 @@ class Widget:
     
   def _generate_disable_drag_event(self):
     self._root.event_generate('<<Stop_Drag>>', when='now')
+  
+  def _generate_resize_event(self, size):
+    self._size_config = SIZE[size]
+    self._root.event_generate('<<Resize>>', when='now')
   
   def _reset_window_position(self):
     screen_width, screen_height = self._root.winfo_screenwidth(), self._root.winfo_screenheight()

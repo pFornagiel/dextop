@@ -24,21 +24,38 @@ class TrayCallbacks:
   generate_enable_drag_event: Callable[[],None]
   generate_disable_drag_event: Callable[[],None]
   reset_window_position: Callable[[], None]
+  generate_resize_event: Callable[[str],None]
 
 # Class for managing the tray icon
 class TrayIcon:
-  def __init__(self, callbacks: TrayCallbacks) -> None:
+  def __init__(self, callbacks: TrayCallbacks, size) -> None:
     self._callbacks = callbacks
     self._draggable = False
+    self._size = size
     
     self._tray = pystray.Icon('Dextop', icon=create_image(64, 64, 'black', 'white'), menu=self._initialise_menu())
     
   def _initialise_menu(self):
     return pystray.Menu(
       pystray.MenuItem(
+        'Size',
+        pystray.Menu(
+          pystray.MenuItem(
+            'Normal',
+            lambda: self._resize('NORMAL'),
+            checked = lambda _: self._size == 'NORMAL'
+          ),
+          pystray.MenuItem(
+            'Large',
+            lambda: self._resize('LARGE'),
+            checked = lambda _: self._size == 'LARGE'
+          )
+        )
+      ),
+      pystray.MenuItem(
         'Draggable',
         self._toggle_drag,
-        checked= lambda item: self._draggable
+        checked= lambda _: self._draggable
     ),
       pystray.MenuItem(
         'Reset Position',
@@ -52,11 +69,11 @@ class TrayIcon:
       ) 
     )
   
-  def _close_tray(self):
+  def _close_tray(self) -> None:
     self._callbacks.generate_close_event()
     self._tray.stop()
   
-  def _toggle_drag(self):
+  def _toggle_drag(self) -> None:
     self._draggable = not self._draggable
     self._tray.update_menu()  
     
@@ -65,5 +82,10 @@ class TrayIcon:
     else:
       self._callbacks.generate_disable_drag_event()
   
-  def run_tray_icon(self):
+  def _resize(self,size) -> None:
+    if(self._size == size): return
+    self._size = size
+    self._callbacks.generate_resize_event(size)
+  
+  def run_tray_icon(self) -> None:
     self._tray.run_detached()
