@@ -27,6 +27,23 @@ SIZE = {
   )
 }
 
+# default settings
+DEFAULT_SETTINGS = {
+    'credentials': {
+        'login': '',
+        'password': ''
+    },
+    'position': {
+        'x': '',
+        'y': ''
+    },
+    'settings': {
+        'interval': '1',
+        'size': 'NORMAL',
+        'europe': 'False'
+    }
+}
+
 # Colours
 WARNING_BOTTOM = 'red'
 WARNING_UPPER = '#ffce1f'
