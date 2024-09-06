@@ -24,8 +24,9 @@ class Position:
   y: int
 
 class Widget:
-  def __init__(self, dex_api: DexcomApi) -> None:
-    self._root = tk.Tk()
+  def __init__(self, parent_root: tk.Tk, dex_api: DexcomApi) -> None:
+    self._parent_root = parent_root
+    self._root = tk.Toplevel()
     self._dex_api = dex_api
     self._initialise_settings()
     self._initialise_GUI_value_display()
@@ -120,7 +121,8 @@ class Widget:
       padx=10, 
       font=('Inter',glucose_size),
       fg=colour,
-      background=BACKGROUND)
+      background=BACKGROUND
+    )
     
     # Trend arrow label displaying SVG
     svg = tksvg.SvgImage(data=get_trend_arrow_SVG(self._trend.get(), colour, svg_size))
@@ -153,6 +155,7 @@ class Widget:
     self._frame_wrapper.pack(expand=True)
     
   # Windows specific click-trough hacks
+  
   def _enable_clicktrough(self,init=False):
     hwnd = self._root.winfo_id() if init else win32gui.FindWindow(None, self._root.title())
     styles = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
@@ -168,9 +171,11 @@ class Widget:
     win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, styles)  # Set new styles
   
   # Event handlers
+  
   def _on_close(self,_=None):
     self._glucose_fetcher.stop_fetch_loop()
     self._root.destroy()
+    self._parent_root.destroy()
   
   def _on_update(self, _):
     trend = self._trend.get()
@@ -244,17 +249,23 @@ class Widget:
       self._config.write(config_file)
   
   # Event generating methods
+  
   def _generate_udpate_event(self,glucose_value:str, trend:int):
     self._glucose_value.set(glucose_value)
     self._trend.set(trend)
     self._root.event_generate("<<Update>>",when='now')
 
-  def _generate_failed_event(self,error):
+  def _generate_failed_event(self,e):
     self._glucose_value.set('---')
     self._trend.set(0)
     self._root.event_generate("<<Failed>>",when='now')
     
-    print(f'An error has occured: {error}')
+    # TODO add log files
+    message_title = 'Error'
+    if(type(e) == '<class \'pydexcom.errors.AccountError\'>'): message_title = 'Authentication Error'
+    if(type(e) == '<class \'pydexcom.errors.SessionError\'>'): message_title = 'Session Error'
+    if(type(e) == '<class \'pydexcom.errors.SessionError\'>'): message_title = 'Settings Error'
+    print(f'{message_title} has occured: {e}')
   
   def _generate_close_event(self):
     self._root.event_generate("<<Close>>", when='now')
@@ -268,6 +279,8 @@ class Widget:
   def _generate_resize_event(self, size):
     self._size_config = SIZE[size]
     self._root.event_generate('<<Resize>>', when='now')
+  
+  # Helper methods
   
   def _reset_window_position(self):
     screen_width, screen_height = self._root.winfo_screenwidth(), self._root.winfo_screenheight()
