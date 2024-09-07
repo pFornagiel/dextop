@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Tuple, Literal
 import os
+from win32api import GetMonitorInfo, MonitorFromPoint
+
 
 @dataclass
 class Sizing:
@@ -27,14 +29,35 @@ SIZE = {
   )
 }
 
+# default settings
+DEFAULT_SETTINGS = {
+    'credentials': {
+        'login': '',
+        'password': ''
+    },
+    'position': {
+        'x': '',
+        'y': ''
+    },
+    'settings': {
+        'interval': '1',
+        'size': 'NORMAL',
+        'europe': 'False',
+        'upper_threshold': '200',
+        'bottom_threshold': '70'
+    }
+}
+
 # Colours
 WARNING_BOTTOM = 'red'
 WARNING_UPPER = '#ffce1f'
 TEXT = 'white'
 BACKGROUND = '#292929'
 # Positioning
-TASKBAR_OFFSET = 50
-# Treshold, constant for now
-TRESHOLD_BOTTOM = 70
-TRESHOLD_UPPER = 250
+# Get the taskbar height
+monitor_info = GetMonitorInfo(MonitorFromPoint((0,0)))
+monitor_area = monitor_info.get("Monitor")
+work_area = monitor_info.get("Work")
+TASKBAR_OFFSET = monitor_area[3]-work_area[3]
+# Path
 SETTINGS_PATH = os.path.join(os.getcwd(), 'app/settings.ini')

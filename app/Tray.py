@@ -25,6 +25,7 @@ class TrayCallbacks:
   generate_disable_drag_event: Callable[[],None]
   reset_window_position: Callable[[], None]
   generate_resize_event: Callable[[str],None]
+  generate_open_settings_event: Callable[[], None]
 
 # Class for managing the tray icon
 class TrayIcon:
@@ -63,14 +64,23 @@ class TrayIcon:
         checked=None
     ),
       pystray.MenuItem(
+        'Settings',
+        self._open_settings,
+        checked=None
+      ),
+      pystray.MenuItem(
         'Close',
         self._close_tray,
         checked=None
-      ) 
+      )
     )
   
   def _close_tray(self) -> None:
     self._callbacks.generate_close_event()
+    self._tray.stop()
+    
+  def _open_settings(self) -> None:
+    self._callbacks.generate_open_settings_event()
     self._tray.stop()
   
   def _toggle_drag(self) -> None:

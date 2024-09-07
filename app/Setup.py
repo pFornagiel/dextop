@@ -1,0 +1,253 @@
+import tkinter as tk
+import tkinter.messagebox as mb
+from configparser import ConfigParser
+from .DexcomApi import DexcomApi
+from pydexcom import errors as dexcom_errors
+from .Consts import *
+import keyring
+from .Widget import Widget
+
+class SetupWindow:
+  def __init__(self) -> None:
+    self._root = tk.Tk()
+    self._initialise_settings()
+    self._initialize_window()
+    if(self._check_logged_in()):
+      self._root.withdraw()
+      self._skip_setup()
+    self._root.mainloop()
+  
+  def _initialise_settings(self) -> None:
+    # TODO ADD ERRORS CHECK
+    self._config = ConfigParser()
+    self._config.read(SETTINGS_PATH)
+    
+    for section, keys in DEFAULT_SETTINGS.items():
+      if section not in self._config:
+        self._config.add_section(section)
+      for key, value in keys.items():
+        if not self._config.has_option(section, key) or not self._config[section][key]:
+          self._config.set(section, key, value)
+          
+    with open(SETTINGS_PATH, 'w') as config_file:
+      self._config.write(config_file)
+
+  def _initialize_window(self) -> None:
+    self._root.title("Settings")
+    self._root.resizable(False,False)
+
+    # Create a container frame for padding around the entire window
+    self._main_frame = tk.Frame(self._root, padx=20, pady=20)  # Add 20px padding around the root
+    self._main_frame.grid(row=0, column=0, sticky="nsew")
+    self._main_frame.grid_columnconfigure(0, weight=1)
+    self._main_frame.grid_columnconfigure(1, weight=1)
+
+    # Login field
+    login = self._config['credentials']['login']
+    tk.Label(self._main_frame, text="Login:").grid(row=0, column=0, sticky="e", padx=10, pady=5)
+    self._login_entry = tk.Entry(self._main_frame, width=25)
+    self._login_entry.insert(0,login)
+    self._login_entry.grid(row=0, column=1, padx=10, pady=5)
+
+    # Password field
+    password = self._get_password(login)
+    tk.Label(self._main_frame, text="Password:").grid(row=1, column=0, sticky="e", padx=10, pady=5)
+    self._password_entry = tk.Entry(self._main_frame, show="*", width=25)
+    self._password_entry.insert(0,password)
+    self._password_entry.grid(row=1, column=1, padx=10, pady=5)
+
+    # Europe checkbox
+    is_europe = self._config['settings']['europe']
+    self._europe_var = tk.BooleanVar(value=is_europe)
+    self._europe_checkbox = tk.Checkbutton(self._main_frame, text="Europe", variable=self._europe_var)
+    self._europe_checkbox.grid(row=2, column=0, columnspan=2, padx=10, pady=5)
+
+    # Settings button
+    self._settings_button = tk.Button(self._main_frame, text="Settings ▼", command=self._toggle_more_settings, width=30)
+    self._settings_button.grid(row=3, column=0, columnspan=2, pady=10)
+
+    # Frame for settings that can be shown/hidden
+    self._settings_frame = tk.Frame(self._main_frame, borderwidth=1)
+
+    # Reading Interval field inside settings frame
+    tk.Label(self._settings_frame, text="Reading Interval:").grid(row=0, column=0, sticky="w", padx=10, pady=5)
+    validate_command = (self._root.register(self._validate_numeric),'%P')
+    self._interval_entry = tk.Entry(self._settings_frame, width=3, validate="all", validatecommand=validate_command)
+    self._insert_interval_value()
+    self._interval_entry.grid(row=0, column=1, pady=5)
+    
+    # Minutes label
+    self._minutes_label = tk.Label(self._settings_frame, width=8, text='minutes')
+    self._minutes_label.grid(row=0,column=2, sticky='w')
+
+    # Upper Threshold field inside settings frame
+    tk.Label(self._settings_frame, text="Upper Threshold:").grid(row=1, column=0, sticky="w", padx=10, pady=5)
+    validate_command = (self._root.register(self._validate_numeric),'%P')
+    self._upper_threshold_entry = tk.Entry(self._settings_frame, width=3, validate="all", validatecommand=validate_command)
+    self._insert_upper_threshold_value()
+    self._upper_threshold_entry.grid(row=1, column=1, pady=5)
+    
+    # mg/dL label
+    self._minutes_label = tk.Label(self._settings_frame, width=7, text='mg/dL')
+    self._minutes_label.grid(row=1,column=2, sticky="w")
+    
+    # Bottom Threshold field inside settings frame
+    tk.Label(self._settings_frame, text="Bottom Threshold:").grid(row=2, column=0, sticky="w", padx=10, pady=5)
+    validate_command = (self._root.register(self._validate_numeric),'%P')
+    self._bottom_threshold_entry = tk.Entry(self._settings_frame, width=3, validate="all", validatecommand=validate_command)
+    self._insert_bottom_threshold_value()
+    self._bottom_threshold_entry.grid(row=2, column=1, pady=5)
+    
+    # mg/dL label
+    self._minutes_label = tk.Label(self._settings_frame, width=7, text='mg/dL')
+    self._minutes_label.grid(row=2,column=2, sticky="w")
+
+    # Start with settings frame hidden
+    self._settings_frame.grid(row=4, column=0, columnspan=2, sticky="we")
+    self._settings_frame.grid_remove()
+
+    # Confirm button
+    self._submit_button = tk.Button(self._main_frame, text="Confirm", command=self._submit, width=30)
+    self._submit_button.grid(row=5, column=0, columnspan=2, pady=10)
+    
+    
+    # Center the window on the screen
+    # Causes a single flicker, maybe find a fix later
+    self._root.update_idletasks()  # Ensure window is updated with its final size
+    window_width = self._root.winfo_width()
+    window_height = self._root.winfo_height()
+    screen_width = self._root.winfo_screenwidth()
+    screen_height = self._root.winfo_screenheight()
+
+    x_coordinate = (screen_width // 2) - (window_width // 2)
+    y_coordinate = (screen_height // 2) - (window_height // 2)
+
+    self._root.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")
+
+    
+  def _initialise_dextop_widget(self, login: str, password: str, is_europe: bool, interval:str, upper_threshold: str, bottom_threshold: str) -> None:
+    dex_api = None
+    try:
+      dex_api = DexcomApi(is_europe, login, password)
+    except dexcom_errors.DexcomError as e:
+      message_title = 'Error'
+      if(type(e) == '<class \'pydexcom.errors.AccountError\'>'): message_title = 'Authentication Error'
+      if(type(e) == '<class \'pydexcom.errors.SessionError\'>'): message_title = 'Session Error'
+      if(type(e) == '<class \'pydexcom.errors.SessionError\'>'): message_title = 'Settings Error'
+      tk.messagebox.showwarning(title=message_title, message=f'{str(e)}!')
+      self._reset_settings()
+      # The Setup Window is open
+      if(self._root.state == 'normal'):
+        self._password_entry.delete(0,'end')
+        self._password_entry.focus()
+      # Setup Window is withdrawn
+      else:
+        self._root.deiconify()
+
+    if(dex_api): 
+      self._save_settings(login,password,is_europe,interval, upper_threshold, bottom_threshold)
+      # Hide setup window and create the widget
+      if(self._root.wm_state() == 'normal'):
+        self._root.withdraw()
+      Widget(self._root, dex_api)
+
+  # Helper methods
+  
+  def _save_settings(self, login: str, password: str, europe: bool, interval: str, upper_threshold: str, bottom_threshold: str) -> None:
+    self._config['settings']['interval'] = str(interval)
+    self._config['settings']['europe'] = str(europe)
+    self._config['settings']['upper_threshold'] = str(upper_threshold)
+    self._config['settings']['bottom_threshold'] = str(bottom_threshold)
+    self._config['credentials']['login'] = login
+
+    with open(SETTINGS_PATH, 'w') as configfile:
+      self._config.write(configfile)
+      
+    # Store the password using keyring instead of plain text for security
+    self._set_password(login,password)
+  
+  def _reset_settings(self) -> None:
+    self._config['settings']['interval'] = DEFAULT_SETTINGS['settings']['interval']
+    self._config['settings']['europe'] = DEFAULT_SETTINGS['settings']['europe']
+    self._config['settings']['upper_threshold'] = DEFAULT_SETTINGS['settings']['upper_threshold']
+    self._config['settings']['bottom_threshold'] = DEFAULT_SETTINGS['settings']['bottom_threshold']
+    self._config['credentials']['login'] = DEFAULT_SETTINGS['credentials']['login']
+    with open(SETTINGS_PATH, 'w') as configfile:
+      self._config.write(configfile)
+  
+  def _toggle_more_settings(self) -> None:
+    # Toggle the visibility of the settings frame
+    if self._settings_frame.winfo_ismapped():
+      self._settings_frame.grid_remove()
+      self._settings_button.config(text='Settings ▼')
+    else:
+      self._settings_frame.grid()
+      self._settings_button.config(text='Settings ▲')
+      # Unfocus entries in the settings
+      self._root.focus()
+
+  def _validate_numeric(self, text: str) -> bool:
+    # Validate that the input is numeric
+    if text.isdigit():
+      return 0 < int(text) < 400
+    return text == ""
+  
+  def _insert_interval_value(self) -> None:
+    # Reads the interval value from settings.ini and inserts it into the input field
+    value = self._config['settings']['interval']
+    value = str(value)
+    for i, digit in enumerate(value):
+      self._interval_entry.insert(i, digit)
+      
+  def _insert_upper_threshold_value(self) -> None:
+    # Reads the upper_threshold value from settings.ini and inserts it into the input field
+    value = self._config['settings']['upper_threshold']
+    value = str(value)
+    for i, digit in enumerate(value):
+      self._upper_threshold_entry.insert(i, digit)
+      
+  def _insert_bottom_threshold_value(self) -> None:
+    # Reads the bottom_threshold value from settings.ini and inserts it into the input field
+    value = self._config['settings']['bottom_threshold']
+    value = str(value)
+    for i, digit in enumerate(value):
+      self._bottom_threshold_entry.insert(i, digit)
+  
+  def _submit(self) -> None:
+    login = self._login_entry.get()
+    password = self._password_entry.get()
+    is_europe = self._europe_var.get()
+    interval = self._interval_entry.get()
+    upper_threshold = self._upper_threshold_entry.get()
+    bottom_threshold = self._bottom_threshold_entry.get()
+    self._initialise_dextop_widget(login,password,is_europe, interval, upper_threshold, bottom_threshold)
+      
+  def _check_logged_in(self) -> bool:
+    login = self._config['credentials']['login']
+    if(not login): return False
+    
+    password = self._get_password(login)
+    if(not password): return False
+
+    return True
+  
+  def _skip_setup(self) -> None:
+    login = self._config['credentials']['login']
+    password = self._get_password(login)
+    is_europe = self._config['settings']['europe']
+    interval = self._config['settings']['interval']
+    upper_threshold = self._config['settings']['upper_threshold']
+    bottom_threshold = self._config['settings']['bottom_threshold']
+    
+    self._initialise_dextop_widget(login,password,is_europe,interval, upper_threshold, bottom_threshold)
+  
+  # Keyring helpers
+  
+  def _get_password(self, login) -> str:
+    password = None
+    if(login): password = keyring.get_password('dextop', login)
+    return password if password is not None else ''
+
+  def _set_password(self,login,password) -> None:
+    if(login): keyring.set_password("dextop", login, password)
+  

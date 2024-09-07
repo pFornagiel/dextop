@@ -4,6 +4,7 @@ import tksvg
 from .SvgTrends import get_trend_arrow_SVG
 # Dexcom Api
 from .DexcomApi import DexcomApi, GlucoseFetcher
+from pydexcom import DexcomError
 # Clicktrough-hacking - win32
 import win32gui
 import win32con
@@ -24,8 +25,9 @@ class Position:
   y: int
 
 class Widget:
-  def __init__(self, dex_api: DexcomApi) -> None:
-    self._root = tk.Tk()
+  def __init__(self, parent_root: tk.Tk, dex_api: DexcomApi) -> None:
+    self._parent_root = parent_root
+    self._root = tk.Toplevel()
     self._dex_api = dex_api
     self._initialise_settings()
     self._initialise_GUI_value_display()
@@ -39,11 +41,14 @@ class Widget:
     self._config.read(SETTINGS_PATH)
     self._size_config: Sizing = SIZE[self._config['settings']['size']]
     self._interval: int = int(self._config['settings']['interval'])
+    self._upper_threshold: int = int(self._config['settings']['upper_threshold'])
+    self._bottom_threshold: int = int(self._config['settings']['bottom_threshold'])
     self._position: Position = Position(
       x = int(self._config['position']['x']),
       y = int(self._config['position']['y'])
     )
     self._moveable: bool = False
+
   
   def _initialise_glucose_fetching(self) -> None:
     self._glucose_fetcher = GlucoseFetcher(self._dex_api, self._interval ,self._generate_failed_event, self._generate_udpate_event)
@@ -54,13 +59,14 @@ class Widget:
     self._trend = tk.IntVar(value=0)
     self._units = tk.StringVar(value='mg/dL')
     
-  def _initialise_tray(self):
+  def _initialise_tray(self) -> None:
     callbacks = TrayCallbacks(
       self._generate_close_event,
       self._generate_enable_drag_event,
       self._generate_disable_drag_event,
       self._reset_window_position,
-      self._generate_resize_event
+      self._generate_resize_event,
+      self._generate_open_settings_event
     )
     self._tray_icon = TrayIcon(callbacks, self._size_config.size)
     self._tray_icon.run_tray_icon()
@@ -84,8 +90,8 @@ class Widget:
     self._root.bind("<ButtonPress-1>", self._on_start_drag)
     self._root.bind("<ButtonRelease-1>", self._on_stop_drag)
     self._root.bind("<B1-Motion>", self._on_drag)
-    # self._root.bind("<<Resize>>", lambda event: event_handler(event, event.widget.event_info["data"].arg1, event.widget.event_info["data"].arg2))
     self._root.bind("<<Resize>>", self._on_resize)
+    self._root.bind("<<Settings>>", self._on_open_settings)
 
     
     # Position the window
@@ -120,7 +126,8 @@ class Widget:
       padx=10, 
       font=('Inter',glucose_size),
       fg=colour,
-      background=BACKGROUND)
+      background=BACKGROUND
+    )
     
     # Trend arrow label displaying SVG
     svg = tksvg.SvgImage(data=get_trend_arrow_SVG(self._trend.get(), colour, svg_size))
@@ -153,7 +160,8 @@ class Widget:
     self._frame_wrapper.pack(expand=True)
     
   # Windows specific click-trough hacks
-  def _enable_clicktrough(self,init=False):
+  
+  def _enable_clicktrough(self,init=False) -> None:
     hwnd = self._root.winfo_id() if init else win32gui.FindWindow(None, self._root.title())
     styles = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
     styles = styles | win32con.WS_EX_LAYERED
@@ -161,18 +169,20 @@ class Widget:
     win32gui.SetLayeredWindowAttributes(hwnd, 0, 255, win32con.LWA_ALPHA)
     self._root.attributes('-transparentcolor', '#000000')
 
-  def _disable_clicktrough(self,init=False):
+  def _disable_clicktrough(self,init=False) -> None:
     hwnd = self._root.winfo_id() if init else win32gui.FindWindow(None, self._root.title())
     styles = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
     styles = styles & ~win32con.WS_EX_LAYERED  # Remove the layered style
     win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, styles)  # Set new styles
   
   # Event handlers
-  def _on_close(self,_=None):
+  
+  def _on_close(self,_) -> None:
     self._glucose_fetcher.stop_fetch_loop()
     self._root.destroy()
+    self._parent_root.destroy()
   
-  def _on_update(self, _):
+  def _on_update(self, _) -> None:
     trend = self._trend.get()
     colour = self._get_colour()
     
@@ -184,7 +194,7 @@ class Widget:
     
     self._root.update_idletasks()
   
-  def _on_fail(self,_):
+  def _on_fail(self,_) -> None:
     self._glucose_value_label.config(fg=TEXT)
     svg = tksvg.SvgImage(data=get_trend_arrow_SVG(0,TEXT, self._size_config.svg))
     self._trend_label.config(image=svg)
@@ -192,20 +202,20 @@ class Widget:
     
     self._root.update_idletasks()
   
-  def _on_enable_drag(self,_):
+  def _on_enable_drag(self,_) -> None:
     self._disable_clicktrough()
     self._moveable = True
   
-  def _on_disable_drag(self,_):
+  def _on_disable_drag(self,_) -> None:
     self._enable_clicktrough()
     self._moveable = False
     
-  def _on_start_drag(self,event):
+  def _on_start_drag(self,event: tk.Event) -> None:
     if(self._moveable):
       self._root.x = event.x
       self._root.y = event.y
 
-  def _on_stop_drag(self,_):
+  def _on_stop_drag(self,_) -> None:
     if(self._moveable):
       self._position.x, self._position.y = self._root.winfo_x(), self._root.winfo_y()
       self._config['position'] = {
@@ -218,7 +228,7 @@ class Widget:
       self._root.x = None
       self._root.y = None
     
-  def _on_drag(self,event):
+  def _on_drag(self,event: tk.Event) -> None:
     if(self._moveable):
       delta_x = event.x - self._root.x
       delta_y = event.y - self._root.y
@@ -227,7 +237,7 @@ class Widget:
       window_width,window_height =self._size_config.window
       self._root.geometry(f"{window_width}x{window_height}+{x}+{y}")
     
-  def _on_resize(self,_):
+  def _on_resize(self,_) -> None:
     window_width, window_height = self._size_config.window
     self._root.geometry(f'{window_width}x{window_height}')
     self._glucose_value_label.configure(font=('Inter',self._size_config.font_glucose))
@@ -242,34 +252,52 @@ class Widget:
     self._config['settings']['size'] = self._size_config.size
     with open(SETTINGS_PATH, 'w') as config_file:
       self._config.write(config_file)
-  
+      
+    
+  def _on_open_settings(self, _) -> None:
+    if(self._parent_root.wm_state() != 'normal'):
+      self._parent_root.deiconify()
+    self._glucose_fetcher.stop_fetch_loop()
+    self._root.destroy()
+
   # Event generating methods
-  def _generate_udpate_event(self,glucose_value:str, trend:int):
+  
+  def _generate_udpate_event(self,glucose_value:str, trend:int) -> None:
     self._glucose_value.set(glucose_value)
     self._trend.set(trend)
     self._root.event_generate("<<Update>>",when='now')
 
-  def _generate_failed_event(self,error):
+  def _generate_failed_event(self,e: DexcomError) -> None:
     self._glucose_value.set('---')
     self._trend.set(0)
     self._root.event_generate("<<Failed>>",when='now')
     
-    print(f'An error has occured: {error}')
+    # TODO add log files
+    message_title = 'Error'
+    if(type(e) == '<class \'pydexcom.errors.AccountError\'>'): message_title = 'Authentication Error'
+    if(type(e) == '<class \'pydexcom.errors.SessionError\'>'): message_title = 'Session Error'
+    if(type(e) == '<class \'pydexcom.errors.SessionError\'>'): message_title = 'Settings Error'
+    print(f'{message_title} has occured: {e}')
   
-  def _generate_close_event(self):
+  def _generate_close_event(self) -> None:
     self._root.event_generate("<<Close>>", when='now')
     
-  def _generate_enable_drag_event(self):
+  def _generate_enable_drag_event(self) -> None:
     self._root.event_generate('<<Start_Drag>>', when='now')
     
-  def _generate_disable_drag_event(self):
+  def _generate_disable_drag_event(self) -> None:
     self._root.event_generate('<<Stop_Drag>>', when='now')
   
-  def _generate_resize_event(self, size):
+  def _generate_resize_event(self, size) -> None:
     self._size_config = SIZE[size]
     self._root.event_generate('<<Resize>>', when='now')
+    
+  def _generate_open_settings_event(self) -> None:
+    self._root.event_generate('<<Settings>>', when='now')
   
-  def _reset_window_position(self):
+  # Helper methods
+  
+  def _reset_window_position(self) -> None:
     screen_width, screen_height = self._root.winfo_screenwidth(), self._root.winfo_screenheight()
     window_width, window_height = self._size_config.window
     self._position.x,self._position.y = screen_width - window_width, screen_height- window_height - TASKBAR_OFFSET
@@ -283,11 +311,11 @@ class Widget:
     with open(SETTINGS_PATH, 'w') as configfile:
       self._config.write(configfile)
       
-  def _get_colour(self):
+  def _get_colour(self) -> str:
     glucose_value = self._glucose_value.get()
     colour = TEXT
-    if(glucose_value != '---' and int(glucose_value) <= TRESHOLD_BOTTOM):
+    if(glucose_value != '---' and int(glucose_value) <= self._bottom_threshold):
       colour = WARNING_BOTTOM
-    if(glucose_value != '---' and int(glucose_value) >= TRESHOLD_UPPER):
+    if(glucose_value != '---' and int(glucose_value) >= self._upper_threshold):
       colour = WARNING_UPPER
     return colour

@@ -1,5 +1,6 @@
 # pydexcom
 from pydexcom import Dexcom
+from pydexcom import errors as dexcom_errors
 # Threading
 import threading
 # Types and dataclasses
@@ -23,50 +24,47 @@ class DexcomApi:
     self._password = password
     self._dexcom: Optional[Dexcom] = None
     
-    try:
-      self._dexcom = Dexcom(self._username, self._password, ous=ous)
-    except Exception as error:
-      raise Exception(f'An error has occured during Dexcom API initialization: {error}')
+    # Exception handling done in Setup.py component
+    self._dexcom = Dexcom(self._username, self._password, ous=ous)
     
-  def fetch_glucose_reading(self):
+  def fetch_glucose_reading(self) -> DexcomData:
     if(not self._dexcom):
       raise Exception('Dexcom API not initialised.')
     
-    try:
-      reading = self._dexcom.get_current_glucose_reading()
-      return DexcomData(
-        glucose_reading=reading.value, 
-        trend=reading.trend
-      )
-    except Exception as error:
-      raise Exception(f'An error has occurred while fetching glucose reading: {error}')
+    # Exception handling done in Widget.py
+    reading = self._dexcom.get_current_glucose_reading()
+    return DexcomData(
+      glucose_reading=reading.value, 
+      trend=reading.trend
+    )
 
-# Class establishing periodical fetch loop
+# Class initiating periodical fetch loop
 class GlucoseFetcher:
   def __init__(self, dex_api: DexcomApi, interval:int, generate_fail_event: Callable[[],None], generate_update_event: Callable[[str,int,int],None]) -> None:
     self._dex_api = dex_api
-    self._interval = interval
+    self._interval = interval * 60
     self._generate_fail_event = generate_fail_event
     self._generate_update_event = generate_update_event
     self._stop_event = threading.Event()
     self._thread: Optional[threading.Thread] = None
     
-  def _fetch_loop(self, interval: int):
+  def _fetch_loop(self, interval: int) -> None:
     while(not self._stop_event.is_set()):
       try:
         reading = self._dex_api.fetch_glucose_reading()
         self._generate_update_event(reading.glucose_reading, reading.trend)
-      except Exception as error:
-        self._generate_fail_event(error)
+        
+      except dexcom_errors.DexcomError as e:
+        self._generate_fail_event(e)
       self._stop_event.wait(interval)
          
-  def start_fetch_loop(self):
+  def start_fetch_loop(self) -> None:
     if(not self._thread or not self._thread.is_alive()):
       self._stop_event.clear()
       self._thread = threading.Thread(target=self._fetch_loop, args=([self._interval]))
       self._thread.start()
   
-  def stop_fetch_loop(self):
+  def stop_fetch_loop(self) -> None:
     if(self._thread and self._thread.is_alive()):
       self._stop_event.set()
       self._thread.join()
