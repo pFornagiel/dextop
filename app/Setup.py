@@ -33,34 +33,41 @@ class SetupWindow:
       self._config.write(config_file)
 
   def _initialize_window(self) -> None:
-    self._root.title("Setup Window")
+    self._root.title("Settings")
+    self._root.resizable(False,False)
+
+    # Create a container frame for padding around the entire window
+    self._main_frame = tk.Frame(self._root, padx=20, pady=20)  # Add 20px padding around the root
+    self._main_frame.grid(row=0, column=0, sticky="nsew")
+    self._main_frame.grid_columnconfigure(0, weight=1)
+    self._main_frame.grid_columnconfigure(1, weight=1)
 
     # Login field
     login = self._config['credentials']['login']
-    tk.Label(self._root, text="Login:").grid(row=0, column=0, sticky="w", padx=10, pady=5)
-    self._login_entry = tk.Entry(self._root)
+    tk.Label(self._main_frame, text="Login:").grid(row=0, column=0, sticky="e", padx=10, pady=5)
+    self._login_entry = tk.Entry(self._main_frame, width=25)
     self._login_entry.insert(0,login)
     self._login_entry.grid(row=0, column=1, padx=10, pady=5)
 
     # Password field
     password = self._get_password(login)
-    tk.Label(self._root, text="Password:").grid(row=1, column=0, sticky="w", padx=10, pady=5)
-    self._password_entry = tk.Entry(self._root, show="*")
+    tk.Label(self._main_frame, text="Password:").grid(row=1, column=0, sticky="e", padx=10, pady=5)
+    self._password_entry = tk.Entry(self._main_frame, show="*", width=25)
     self._password_entry.insert(0,password)
     self._password_entry.grid(row=1, column=1, padx=10, pady=5)
 
     # Europe checkbox
     is_europe = self._config['settings']['europe']
     self._europe_var = tk.BooleanVar(value=is_europe)
-    self._europe_checkbox = tk.Checkbutton(self._root, text="Europe", variable=self._europe_var)
+    self._europe_checkbox = tk.Checkbutton(self._main_frame, text="Europe", variable=self._europe_var)
     self._europe_checkbox.grid(row=2, column=0, columnspan=2, padx=10, pady=5)
 
     # Settings button
-    self._settings_button = tk.Button(self._root, text="Settings ▼", command=self._toggle_more_settings)
+    self._settings_button = tk.Button(self._main_frame, text="Settings ▼", command=self._toggle_more_settings, width=30)
     self._settings_button.grid(row=3, column=0, columnspan=2, pady=10)
 
     # Frame for settings that can be shown/hidden
-    self._settings_frame = tk.Frame(self._root, borderwidth=1)
+    self._settings_frame = tk.Frame(self._main_frame, borderwidth=1)
 
     # Reading Interval field inside settings frame
     tk.Label(self._settings_frame, text="Reading Interval:").grid(row=0, column=0, sticky="w", padx=10, pady=5)
@@ -68,6 +75,10 @@ class SetupWindow:
     self._interval_entry = tk.Entry(self._settings_frame, width=3, validate="all", validatecommand=validate_command)
     self._insert_interval_value()
     self._interval_entry.grid(row=0, column=1, pady=5)
+    
+    # Minutes label
+    self._minutes_label = tk.Label(self._settings_frame, width=8, text='minutes')
+    self._minutes_label.grid(row=0,column=2, sticky='w')
 
     # Upper Threshold field inside settings frame
     tk.Label(self._settings_frame, text="Upper Threshold:").grid(row=1, column=0, sticky="w", padx=10, pady=5)
@@ -76,6 +87,10 @@ class SetupWindow:
     self._insert_upper_threshold_value()
     self._upper_threshold_entry.grid(row=1, column=1, pady=5)
     
+    # mg/dL label
+    self._minutes_label = tk.Label(self._settings_frame, width=7, text='mg/dL')
+    self._minutes_label.grid(row=1,column=2, sticky="w")
+    
     # Bottom Threshold field inside settings frame
     tk.Label(self._settings_frame, text="Bottom Threshold:").grid(row=2, column=0, sticky="w", padx=10, pady=5)
     validate_command = (self._root.register(self._validate_numeric),'%P')
@@ -83,18 +98,32 @@ class SetupWindow:
     self._insert_bottom_threshold_value()
     self._bottom_threshold_entry.grid(row=2, column=1, pady=5)
     
-    # Minutes label
-    self._minutes_label = tk.Label(self._settings_frame, width=3, text='min')
-    self._minutes_label.grid(row=0,column=2)
-    
+    # mg/dL label
+    self._minutes_label = tk.Label(self._settings_frame, width=7, text='mg/dL')
+    self._minutes_label.grid(row=2,column=2, sticky="w")
 
     # Start with settings frame hidden
     self._settings_frame.grid(row=4, column=0, columnspan=2, sticky="we")
     self._settings_frame.grid_remove()
 
-    # Button to submit or proceed (optional)
-    self._submit_button = tk.Button(self._root, text="Confirm", command=self._submit)
+    # Confirm button
+    self._submit_button = tk.Button(self._main_frame, text="Confirm", command=self._submit, width=30)
     self._submit_button.grid(row=5, column=0, columnspan=2, pady=10)
+    
+    
+    # Center the window on the screen
+    # Causes a single flicker, maybe find a fix later
+    self._root.update_idletasks()  # Ensure window is updated with its final size
+    window_width = self._root.winfo_width()
+    window_height = self._root.winfo_height()
+    screen_width = self._root.winfo_screenwidth()
+    screen_height = self._root.winfo_screenheight()
+
+    x_coordinate = (screen_width // 2) - (window_width // 2)
+    y_coordinate = (screen_height // 2) - (window_height // 2)
+
+    self._root.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")
+
     
   def _initialise_dextop_widget(self, login: str, password: str, is_europe: bool, interval:str, upper_threshold: str, bottom_threshold: str) -> None:
     dex_api = None
