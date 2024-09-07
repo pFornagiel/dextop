@@ -27,7 +27,7 @@ class DexcomApi:
     # Exception handling done in Setup.py component
     self._dexcom = Dexcom(self._username, self._password, ous=ous)
     
-  def fetch_glucose_reading(self):
+  def fetch_glucose_reading(self) -> DexcomData:
     if(not self._dexcom):
       raise Exception('Dexcom API not initialised.')
     
@@ -48,7 +48,7 @@ class GlucoseFetcher:
     self._stop_event = threading.Event()
     self._thread: Optional[threading.Thread] = None
     
-  def _fetch_loop(self, interval: int):
+  def _fetch_loop(self, interval: int) -> None:
     while(not self._stop_event.is_set()):
       try:
         reading = self._dex_api.fetch_glucose_reading()
@@ -58,13 +58,13 @@ class GlucoseFetcher:
         self._generate_fail_event(e)
       self._stop_event.wait(interval)
          
-  def start_fetch_loop(self):
+  def start_fetch_loop(self) -> None:
     if(not self._thread or not self._thread.is_alive()):
       self._stop_event.clear()
       self._thread = threading.Thread(target=self._fetch_loop, args=([self._interval]))
       self._thread.start()
   
-  def stop_fetch_loop(self):
+  def stop_fetch_loop(self) -> None:
     if(self._thread and self._thread.is_alive()):
       self._stop_event.set()
       self._thread.join()
