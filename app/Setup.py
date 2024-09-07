@@ -68,6 +68,20 @@ class SetupWindow:
     self._interval_entry = tk.Entry(self._settings_frame, width=3, validate="all", validatecommand=validate_command)
     self._insert_interval_value()
     self._interval_entry.grid(row=0, column=1, pady=5)
+
+    # Upper Threshold field inside settings frame
+    tk.Label(self._settings_frame, text="Upper Threshold:").grid(row=1, column=0, sticky="w", padx=10, pady=5)
+    validate_command = (self._root.register(self._validate_numeric),'%P')
+    self._upper_threshold_entry = tk.Entry(self._settings_frame, width=3, validate="all", validatecommand=validate_command)
+    self._insert_upper_threshold_value()
+    self._upper_threshold_entry.grid(row=1, column=1, pady=5)
+    
+    # Bottom Threshold field inside settings frame
+    tk.Label(self._settings_frame, text="Bottom Threshold:").grid(row=2, column=0, sticky="w", padx=10, pady=5)
+    validate_command = (self._root.register(self._validate_numeric),'%P')
+    self._bottom_threshold_entry = tk.Entry(self._settings_frame, width=3, validate="all", validatecommand=validate_command)
+    self._insert_bottom_threshold_value()
+    self._bottom_threshold_entry.grid(row=2, column=1, pady=5)
     
     # Minutes label
     self._minutes_label = tk.Label(self._settings_frame, width=3, text='min')
@@ -79,10 +93,10 @@ class SetupWindow:
     self._settings_frame.grid_remove()
 
     # Button to submit or proceed (optional)
-    self._submit_button = tk.Button(self._root, text="Submit", command=self._submit)
+    self._submit_button = tk.Button(self._root, text="Confirm", command=self._submit)
     self._submit_button.grid(row=5, column=0, columnspan=2, pady=10)
     
-  def _initialise_dextop_widget(self, login: str, password: str, is_europe: bool, interval:str) -> None:
+  def _initialise_dextop_widget(self, login: str, password: str, is_europe: bool, interval:str, upper_threshold: str, bottom_threshold: str) -> None:
     dex_api = None
     try:
       dex_api = DexcomApi(is_europe, login, password)
@@ -102,7 +116,7 @@ class SetupWindow:
         self._root.deiconify()
 
     if(dex_api): 
-      self._save_settings(login,password,is_europe,interval)
+      self._save_settings(login,password,is_europe,interval, upper_threshold, bottom_threshold)
       # Hide setup window and create the widget
       if(self._root.wm_state() == 'normal'):
         self._root.withdraw()
@@ -110,9 +124,11 @@ class SetupWindow:
 
   # Helper methods
   
-  def _save_settings(self, login: str, password: str, europe: bool, interval: str) -> None:
+  def _save_settings(self, login: str, password: str, europe: bool, interval: str, upper_threshold: str, bottom_threshold: str) -> None:
     self._config['settings']['interval'] = str(interval)
     self._config['settings']['europe'] = str(europe)
+    self._config['settings']['upper_threshold'] = str(upper_threshold)
+    self._config['settings']['bottom_threshold'] = str(bottom_threshold)
     self._config['credentials']['login'] = login
 
     with open(SETTINGS_PATH, 'w') as configfile:
@@ -122,9 +138,11 @@ class SetupWindow:
     self._set_password(login,password)
   
   def _reset_settings(self) -> None:
-    self._config['settings']['interval'] = ''
-    self._config['settings']['europe'] = 'False'
-    self._config['credentials']['login'] = ''
+    self._config['settings']['interval'] = DEFAULT_SETTINGS['settings']['interval']
+    self._config['settings']['europe'] = DEFAULT_SETTINGS['settings']['europe']
+    self._config['settings']['upper_threshold'] = DEFAULT_SETTINGS['settings']['upper_threshold']
+    self._config['settings']['bottom_threshold'] = DEFAULT_SETTINGS['settings']['bottom_threshold']
+    self._config['credentials']['login'] = DEFAULT_SETTINGS['credentials']['login']
     with open(SETTINGS_PATH, 'w') as configfile:
       self._config.write(configfile)
   
@@ -142,7 +160,7 @@ class SetupWindow:
   def _validate_numeric(self, text: str) -> bool:
     # Validate that the input is numeric
     if text.isdigit():
-      return 0 < int(text) < 100
+      return 0 < int(text) < 400
     return text == ""
   
   def _insert_interval_value(self) -> None:
@@ -151,13 +169,29 @@ class SetupWindow:
     value = str(value)
     for i, digit in enumerate(value):
       self._interval_entry.insert(i, digit)
+      
+  def _insert_upper_threshold_value(self) -> None:
+    # Reads the upper_threshold value from settings.ini and inserts it into the input field
+    value = self._config['settings']['upper_threshold']
+    value = str(value)
+    for i, digit in enumerate(value):
+      self._upper_threshold_entry.insert(i, digit)
+      
+  def _insert_bottom_threshold_value(self) -> None:
+    # Reads the bottom_threshold value from settings.ini and inserts it into the input field
+    value = self._config['settings']['bottom_threshold']
+    value = str(value)
+    for i, digit in enumerate(value):
+      self._bottom_threshold_entry.insert(i, digit)
   
   def _submit(self) -> None:
     login = self._login_entry.get()
     password = self._password_entry.get()
     is_europe = self._europe_var.get()
     interval = self._interval_entry.get()
-    self._initialise_dextop_widget(login,password,is_europe, interval)
+    upper_threshold = self._upper_threshold_entry.get()
+    bottom_threshold = self._bottom_threshold_entry.get()
+    self._initialise_dextop_widget(login,password,is_europe, interval, upper_threshold, bottom_threshold)
       
   def _check_logged_in(self) -> bool:
     login = self._config['credentials']['login']
@@ -173,7 +207,10 @@ class SetupWindow:
     password = self._get_password(login)
     is_europe = self._config['settings']['europe']
     interval = self._config['settings']['interval']
-    self._initialise_dextop_widget(login,password,is_europe,interval)
+    upper_threshold = self._config['settings']['upper_threshold']
+    bottom_threshold = self._config['settings']['bottom_threshold']
+    
+    self._initialise_dextop_widget(login,password,is_europe,interval, upper_threshold, bottom_threshold)
   
   # Keyring helpers
   

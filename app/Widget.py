@@ -41,11 +41,14 @@ class Widget:
     self._config.read(SETTINGS_PATH)
     self._size_config: Sizing = SIZE[self._config['settings']['size']]
     self._interval: int = int(self._config['settings']['interval'])
+    self._upper_threshold: int = int(self._config['settings']['upper_threshold'])
+    self._bottom_threshold: int = int(self._config['settings']['bottom_threshold'])
     self._position: Position = Position(
       x = int(self._config['position']['x']),
       y = int(self._config['position']['y'])
     )
     self._moveable: bool = False
+
   
   def _initialise_glucose_fetching(self) -> None:
     self._glucose_fetcher = GlucoseFetcher(self._dex_api, self._interval ,self._generate_failed_event, self._generate_udpate_event)
@@ -311,8 +314,8 @@ class Widget:
   def _get_colour(self) -> str:
     glucose_value = self._glucose_value.get()
     colour = TEXT
-    if(glucose_value != '---' and int(glucose_value) <= TRESHOLD_BOTTOM):
+    if(glucose_value != '---' and int(glucose_value) <= self._bottom_threshold):
       colour = WARNING_BOTTOM
-    if(glucose_value != '---' and int(glucose_value) >= TRESHOLD_UPPER):
+    if(glucose_value != '---' and int(glucose_value) >= self._upper_threshold):
       colour = WARNING_UPPER
     return colour
