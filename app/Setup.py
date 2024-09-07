@@ -82,7 +82,7 @@ class SetupWindow:
     self._submit_button = tk.Button(self._root, text="Submit", command=self._submit)
     self._submit_button.grid(row=5, column=0, columnspan=2, pady=10)
     
-  def _initialise_dextop_widget(self, login, password, is_europe, interval):
+  def _initialise_dextop_widget(self, login: str, password: str, is_europe: bool, interval:str) -> None:
     dex_api = None
     try:
       dex_api = DexcomApi(is_europe, login, password)
@@ -110,7 +110,7 @@ class SetupWindow:
 
   # Helper methods
   
-  def _save_settings(self, login: str, password: str, europe: bool, interval: str):
+  def _save_settings(self, login: str, password: str, europe: bool, interval: str) -> None:
     self._config['settings']['interval'] = str(interval)
     self._config['settings']['europe'] = str(europe)
     self._config['credentials']['login'] = login
@@ -121,7 +121,7 @@ class SetupWindow:
     # Store the password using keyring instead of plain text for security
     self._set_password(login,password)
   
-  def _reset_settings(self):
+  def _reset_settings(self) -> None:
     self._config['settings']['interval'] = ''
     self._config['settings']['europe'] = 'False'
     self._config['credentials']['login'] = ''
@@ -145,7 +145,7 @@ class SetupWindow:
       return 0 < int(text) < 100
     return text == ""
   
-  def _insert_interval_value(self):
+  def _insert_interval_value(self) -> None:
     # Reads the interval value from settings.ini and inserts it into the input field
     value = self._config['settings']['interval']
     value = str(value)
@@ -159,7 +159,7 @@ class SetupWindow:
     interval = self._interval_entry.get()
     self._initialise_dextop_widget(login,password,is_europe, interval)
       
-  def _check_logged_in(self):
+  def _check_logged_in(self) -> bool:
     login = self._config['credentials']['login']
     if(not login): return False
     
@@ -168,7 +168,7 @@ class SetupWindow:
 
     return True
   
-  def _skip_setup(self):
+  def _skip_setup(self) -> None:
     login = self._config['credentials']['login']
     password = self._get_password(login)
     is_europe = self._config['settings']['europe']
@@ -177,11 +177,11 @@ class SetupWindow:
   
   # Keyring helpers
   
-  def _get_password(self, login):
+  def _get_password(self, login) -> str:
     password = None
     if(login): password = keyring.get_password('dextop', login)
     return password if password is not None else ''
 
-  def _set_password(self,login,password):
+  def _set_password(self,login,password) -> None:
     if(login): keyring.set_password("dextop", login, password)
   

@@ -49,7 +49,7 @@ ARROW_7 = '''
 arrows = [ARROW_0,ARROW_1,ARROW_2,ARROW_3,ARROW_4,ARROW_5,ARROW_6,ARROW_7]
 
   
-def get_trend_arrow_SVG(number: int,colour: str, size: int):
+def get_trend_arrow_SVG(number: int,colour: str, size: int) -> str:
   if(number == 0): return arrows[0]
   if(number == 7 or number == 1): return arrows[number].format(size,size,colour,colour)
   return arrows[number].format(size,size,colour)
