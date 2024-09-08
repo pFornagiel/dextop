@@ -3,7 +3,7 @@ from typing import Tuple, Literal
 import os
 from win32api import GetMonitorInfo, MonitorFromPoint
 
-
+# SIZING PROPERTIES
 @dataclass
 class Sizing:
   size: Literal['NORMAL', 'LARGE']
@@ -29,7 +29,7 @@ SIZE = {
   )
 }
 
-# default settings
+# DEFAULT SETTINGS
 DEFAULT_SETTINGS = {
     'credentials': {
         'login': '',
@@ -44,20 +44,27 @@ DEFAULT_SETTINGS = {
         'size': 'NORMAL',
         'europe': 'False',
         'upper_threshold': '200',
-        'bottom_threshold': '70'
+        'bottom_threshold': '70',
+        'mmol': 'False'
     }
 }
 
-# Colours
+# COLOURS
 WARNING_BOTTOM = 'red'
 WARNING_UPPER = '#ffce1f'
 TEXT = 'white'
 BACKGROUND = '#292929'
-# Positioning
-# Get the taskbar height
+
+# MMOL CONVERSION
+# mg/dl = 18.018 ∙ mmol/l
+MMOL_FACTOR = 18.018
+
+# POSITIONING
+# Get the taskbar height at the start of the application
 monitor_info = GetMonitorInfo(MonitorFromPoint((0,0)))
 monitor_area = monitor_info.get("Monitor")
 work_area = monitor_info.get("Work")
 TASKBAR_OFFSET = monitor_area[3]-work_area[3]
-# Path
+
+# PATH
 SETTINGS_PATH = os.path.join(os.getcwd(), 'app/settings.ini')
