@@ -41,8 +41,9 @@ class Widget:
     self._config.read(SETTINGS_PATH)
     self._size_config: Sizing = SIZE[self._config['settings']['size']]
     self._interval: int = int(self._config['settings']['interval'])
-    self._upper_threshold: int = int(self._config['settings']['upper_threshold'])
-    self._bottom_threshold: int = int(self._config['settings']['bottom_threshold'])
+    self._upper_threshold: float = float(self._config['settings']['upper_threshold'])
+    self._bottom_threshold: float = float(self._config['settings']['bottom_threshold'])
+    self._mmol: bool = self._config['settings'].getboolean('mmol')
     self._position: Position = Position(
       x = int(self._config['position']['x']),
       y = int(self._config['position']['y'])
@@ -57,7 +58,7 @@ class Widget:
   def _initialise_GUI_value_display(self) -> None:
     self._glucose_value = tk.StringVar(value='---')
     self._trend = tk.IntVar(value=0)
-    self._units = tk.StringVar(value='mg/dL')
+    self._units = tk.StringVar(value='mg/dL' if not self._mmol else 'mmol/L')
     
   def _initialise_tray(self) -> None:
     callbacks = TrayCallbacks(
@@ -263,7 +264,7 @@ class Widget:
   # Event generating methods
   
   def _generate_udpate_event(self,glucose_value:str, trend:int) -> None:
-    self._glucose_value.set(glucose_value)
+    self._glucose_value.set(glucose_value if not self._mmol else str(round(float(glucose_value) / 18,1)))
     self._trend.set(trend)
     self._root.event_generate("<<Update>>",when='now')
 
@@ -314,8 +315,8 @@ class Widget:
   def _get_colour(self) -> str:
     glucose_value = self._glucose_value.get()
     colour = TEXT
-    if(glucose_value != '---' and int(glucose_value) <= self._bottom_threshold):
+    if(glucose_value != '---' and float(glucose_value) <= self._bottom_threshold):
       colour = WARNING_BOTTOM
-    if(glucose_value != '---' and int(glucose_value) >= self._upper_threshold):
+    if(glucose_value != '---' and float(glucose_value) >= self._upper_threshold):
       colour = WARNING_UPPER
     return colour

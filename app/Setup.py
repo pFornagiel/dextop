@@ -69,46 +69,53 @@ class SetupWindow:
 
     # Frame for settings that can be shown/hidden
     self._settings_frame = tk.Frame(self._main_frame, borderwidth=1)
+    
+    # MMOL/L checkbox
+    is_mmol = self._config['settings']['mmol']
+    self._mmol_var = tk.BooleanVar(value=is_mmol)
+    self._mmol_checkbox = tk.Checkbutton(self._settings_frame, text="Readings in mmol/L", variable=self._mmol_var, command=self._on_mmol_button_click)
+    self._mmol_checkbox.grid(row=0, column=0, columnspan=2, padx=10, pady=5)
+    self._unit_label_var = tk.StringVar(value='mmol/L' if is_mmol else 'mg/dL')
 
     # Reading Interval field inside settings frame
-    tk.Label(self._settings_frame, text="Reading Interval:").grid(row=0, column=0, sticky="w", padx=10, pady=5)
+    tk.Label(self._settings_frame, text="Reading Interval:").grid(row=1, column=0, sticky="w", padx=10, pady=5)
     validate_command = (self._root.register(self._validate_numeric),'%P')
-    self._interval_entry = tk.Entry(self._settings_frame, width=3, validate="all", validatecommand=validate_command)
+    self._interval_entry = tk.Entry(self._settings_frame, width=4, validate="all", validatecommand=validate_command)
     self._insert_interval_value()
-    self._interval_entry.grid(row=0, column=1, pady=5)
+    self._interval_entry.grid(row=1, column=1, pady=5)
     
     # Minutes label
-    self._minutes_label = tk.Label(self._settings_frame, width=8, text='minutes')
-    self._minutes_label.grid(row=0,column=2, sticky='w')
+    self._interval_label = tk.Label(self._settings_frame, width=8, text='minutes')
+    self._interval_label.grid(row=1,column=2, sticky='w')
 
     # Upper Threshold field inside settings frame
-    tk.Label(self._settings_frame, text="Upper Threshold:").grid(row=1, column=0, sticky="w", padx=10, pady=5)
+    tk.Label(self._settings_frame, text="Upper Threshold:").grid(row=2, column=0, sticky="w", padx=10, pady=5)
     validate_command = (self._root.register(self._validate_numeric),'%P')
-    self._upper_threshold_entry = tk.Entry(self._settings_frame, width=3, validate="all", validatecommand=validate_command)
+    self._upper_threshold_entry = tk.Entry(self._settings_frame, width=4, validate="all", validatecommand=validate_command)
     self._insert_upper_threshold_value()
-    self._upper_threshold_entry.grid(row=1, column=1, pady=5)
+    self._upper_threshold_entry.grid(row=2, column=1, pady=5)
     
     # mg/dL label
-    self._minutes_label = tk.Label(self._settings_frame, width=7, text='mg/dL')
-    self._minutes_label.grid(row=1,column=2, sticky="w")
+    self._upper_threshold_label = tk.Label(self._settings_frame, width=7, textvariable=self._unit_label_var)
+    self._upper_threshold_label.grid(row=2,column=2, sticky="w")
     
     # Bottom Threshold field inside settings frame
-    tk.Label(self._settings_frame, text="Bottom Threshold:").grid(row=2, column=0, sticky="w", padx=10, pady=5)
+    tk.Label(self._settings_frame, text="Bottom Threshold:").grid(row=3, column=0, sticky="w", padx=10, pady=5)
     validate_command = (self._root.register(self._validate_numeric),'%P')
-    self._bottom_threshold_entry = tk.Entry(self._settings_frame, width=3, validate="all", validatecommand=validate_command)
+    self._bottom_threshold_entry = tk.Entry(self._settings_frame, width=4, validate="all", validatecommand=validate_command)
     self._insert_bottom_threshold_value()
-    self._bottom_threshold_entry.grid(row=2, column=1, pady=5)
+    self._bottom_threshold_entry.grid(row=3, column=1, pady=5)
     
     # mg/dL label
-    self._minutes_label = tk.Label(self._settings_frame, width=7, text='mg/dL')
-    self._minutes_label.grid(row=2,column=2, sticky="w")
+    self._bottom_threshold_label = tk.Label(self._settings_frame, width=7, textvariable=self._unit_label_var)
+    self._bottom_threshold_label.grid(row=3,column=2, sticky="w")
 
     # Start with settings frame hidden
     self._settings_frame.grid(row=4, column=0, columnspan=2, sticky="we")
     self._settings_frame.grid_remove()
 
     # Confirm button
-    self._submit_button = tk.Button(self._main_frame, text="Confirm", command=self._submit, width=30)
+    self._submit_button = tk.Button(self._main_frame, text="Confirm", command=self._on_submit, width=30)
     self._submit_button.grid(row=5, column=0, columnspan=2, pady=10)
     
     # Center the window on the screen
@@ -122,7 +129,7 @@ class SetupWindow:
     self._root.geometry(f"+{x_coordinate}+{y_coordinate}")
 
     
-  def _initialise_dextop_widget(self, login: str, password: str, is_europe: bool, interval:str, upper_threshold: str, bottom_threshold: str) -> None:
+  def _initialise_dextop_widget(self, login: str, password: str, is_europe: bool, interval:str, upper_threshold: str, bottom_threshold: str, mmol: bool) -> None:
     dex_api = None
     try:
       dex_api = DexcomApi(is_europe, login, password)
@@ -142,19 +149,20 @@ class SetupWindow:
         self._root.deiconify()
 
     if(dex_api): 
-      self._save_settings(login,password,is_europe,interval, upper_threshold, bottom_threshold)
+      self._save_settings(login,password,is_europe,interval, upper_threshold, bottom_threshold, mmol)
       # Hide setup window and create the widget
       if(self._root.wm_state() == 'normal'):
         self._root.withdraw()
       Widget(self._root, dex_api)
-
-  # Helper methods
   
-  def _save_settings(self, login: str, password: str, europe: bool, interval: str, upper_threshold: str, bottom_threshold: str) -> None:
+  # Saving and reseting settings
+  
+  def _save_settings(self, login: str, password: str, europe: bool, interval: str, upper_threshold: str, bottom_threshold: str, mmol: str) -> None:
     self._config['settings']['interval'] = str(interval)
     self._config['settings']['europe'] = str(europe)
     self._config['settings']['upper_threshold'] = str(upper_threshold)
     self._config['settings']['bottom_threshold'] = str(bottom_threshold)
+    self._config['settings']['mmol'] = str(mmol)
     self._config['credentials']['login'] = login
 
     with open(SETTINGS_PATH, 'w') as configfile:
@@ -172,6 +180,8 @@ class SetupWindow:
     with open(SETTINGS_PATH, 'w') as configfile:
       self._config.write(configfile)
   
+  # Helper methods
+  
   def _toggle_more_settings(self) -> None:
     # Toggle the visibility of the settings frame
     if self._settings_frame.winfo_ismapped():
@@ -185,9 +195,11 @@ class SetupWindow:
 
   def _validate_numeric(self, text: str) -> bool:
     # Validate that the input is numeric
-    if text.isdigit():
-      return 0 < int(text) < 400
-    return text == ""
+    # EAFP
+    try:
+      return 0 < float(text) < 1000
+    except ValueError:
+      return text == ''
   
   def _insert_interval_value(self) -> None:
     # Reads the interval value from settings.ini and inserts it into the input field
@@ -209,15 +221,6 @@ class SetupWindow:
     value = str(value)
     for i, digit in enumerate(value):
       self._bottom_threshold_entry.insert(i, digit)
-  
-  def _submit(self) -> None:
-    login = self._login_entry.get()
-    password = self._password_entry.get()
-    is_europe = self._europe_var.get()
-    interval = self._interval_entry.get()
-    upper_threshold = self._upper_threshold_entry.get()
-    bottom_threshold = self._bottom_threshold_entry.get()
-    self._initialise_dextop_widget(login,password,is_europe, interval, upper_threshold, bottom_threshold)
       
   def _check_logged_in(self) -> bool:
     login = self._config['credentials']['login']
@@ -231,12 +234,51 @@ class SetupWindow:
   def _skip_setup(self) -> None:
     login = self._config['credentials']['login']
     password = self._get_password(login)
-    is_europe = self._config['settings']['europe']
+    is_europe = self._config['settings'].getboolean('europe')
     interval = self._config['settings']['interval']
     upper_threshold = self._config['settings']['upper_threshold']
     bottom_threshold = self._config['settings']['bottom_threshold']
+    mmol = self._config['settings'].getboolean('mmol')
     
-    self._initialise_dextop_widget(login,password,is_europe,interval, upper_threshold, bottom_threshold)
+    self._initialise_dextop_widget(login,password,is_europe,interval, upper_threshold, bottom_threshold, mmol)
+    
+  # Event handlers
+  
+  def _on_mmol_button_click(self):
+    is_mmol = self._mmol_var.get()
+    self._unit_label_var.set('mmol/L' if is_mmol else 'mg/dL')
+    
+    upper_threshold = self._upper_threshold_entry.get()
+    bottom_threshold = self._bottom_threshold_entry.get()
+    if(not upper_threshold): upper_threshold = 0
+    if(not bottom_threshold): bottom_threshold = 0
+    upper_threshold = float(upper_threshold)
+    bottom_threshold = float(bottom_threshold)
+    
+    if(is_mmol):
+      upper_threshold =  str(round(upper_threshold / MMOL_FACTOR, 1))
+      bottom_threshold = str(round(bottom_threshold / MMOL_FACTOR, 1))
+    else:
+      upper_threshold =  str(round(upper_threshold * MMOL_FACTOR))
+      bottom_threshold = str(round(bottom_threshold * MMOL_FACTOR))
+      
+    self._upper_threshold_entry.delete(0,'end')
+    self._bottom_threshold_entry.delete(0,'end')
+    
+    for i, digit in enumerate(upper_threshold):
+      self._upper_threshold_entry.insert(i, digit)
+    for i, digit in enumerate(bottom_threshold):
+      self._bottom_threshold_entry.insert(i, digit)
+      
+  def _on_submit(self) -> None:
+    login = self._login_entry.get()
+    password = self._password_entry.get()
+    is_europe = self._europe_var.get()
+    interval = self._interval_entry.get()
+    upper_threshold = self._upper_threshold_entry.get()
+    bottom_threshold = self._bottom_threshold_entry.get()
+    mmol = self._mmol_var.get()
+    self._initialise_dextop_widget(login,password,is_europe, interval, upper_threshold, bottom_threshold, mmol)
   
   # Keyring helpers
   
