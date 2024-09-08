@@ -12,9 +12,9 @@ class SetupWindow:
     self._root = tk.Tk()
     self._initialise_settings()
     self._initialize_window()
-    if(self._check_logged_in()):
-      self._root.withdraw()
-      self._skip_setup()
+
+    self._skip_setup() if self._check_logged_in() else self._root.deiconify()
+    
     self._root.mainloop()
   
   def _initialise_settings(self) -> None:
@@ -35,6 +35,7 @@ class SetupWindow:
   def _initialize_window(self) -> None:
     self._root.title("Settings")
     self._root.resizable(False,False)
+    self._root.withdraw()
 
     # Create a container frame for padding around the entire window
     self._main_frame = tk.Frame(self._root, padx=20, pady=20)  # Add 20px padding around the root
@@ -110,19 +111,15 @@ class SetupWindow:
     self._submit_button = tk.Button(self._main_frame, text="Confirm", command=self._submit, width=30)
     self._submit_button.grid(row=5, column=0, columnspan=2, pady=10)
     
-    
     # Center the window on the screen
-    # Causes a single flicker, maybe find a fix later
     self._root.update_idletasks()  # Ensure window is updated with its final size
     window_width = self._root.winfo_width()
     window_height = self._root.winfo_height()
     screen_width = self._root.winfo_screenwidth()
     screen_height = self._root.winfo_screenheight()
-
     x_coordinate = (screen_width // 2) - (window_width // 2)
     y_coordinate = (screen_height // 2) - (window_height // 2)
-
-    self._root.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")
+    self._root.geometry(f"+{x_coordinate}+{y_coordinate}")
 
     
   def _initialise_dextop_widget(self, login: str, password: str, is_europe: bool, interval:str, upper_threshold: str, bottom_threshold: str) -> None:
