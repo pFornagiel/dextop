@@ -1,16 +1,16 @@
-# Dextop
-## Desktop Dexcom Readings Display Widget
+# Dextop Widget
+## Desktop Dexcom Readings Display
 
 Dextop is a Python-based Windows desktop widget which displays real-time Dexcom glucose readings using the Dexcom Share service API provided by [pydexcom](https://github.com/gagebenne/pydexcom). 
 
-The app started as a personal project, which was motivated by a need to keep an eye on my glucose levels while working, without having to constantly check the phone application. The project is still work in progress.
+The app is a personal project, which was motivated by a need to keep an eye on my glucose levels while working, without having to constantly check the phone application. The project is still work in progress.
 
 ## Features
 
 - Always-on-top, unobstructing widget
 - Real-time Dexcom glucose readings
 - Graphical settings interface
-- Position and size customisation
+- Position, size customisation and configurability
 
 ## Prerequisites
 - Python 3.x
@@ -45,12 +45,12 @@ The [pydexcom's repository](https://github.com/gagebenne/pydexcom) goves detaile
 A quick summary:
 1. Download the [Dexcom G7 / G6 / G5 / G4 / One+ mobile app](https://www.dexcom.com/apps) and [enable the Share service](https://provider.dexcom.com/education-research/cgm-education-use/videos/setting-dexcom-share-and-follow).
 
-2. In the application, log in using your Dexcom Account credentials, *not the Dexcom Share not follower's or manager's*.
+2. In the application, log in using **your** Dexcom Account credentials, **not the Dexcom Share follower's or manager's**.
 
-3. Make sure to toggle the *Europe* checkbox in the app settings, if you happen to use the application outside of America.
+3. Make sure to toggle the *Europe* checkbox in the app settings, if you happen to use the application outside of America. Note, that *Password not valid!* may also be caused by this option, if the user happens to be using the app in the wrong region.
 
-After logging in, the widget itself can be configured using a tray icon associated with it. By right clicking, a set of options will be shown, allowing for changing the size of the widget, moving it around the screen and closing the app.
+After logging in, the widget itself can be configured using a tray icon associated with it. By right clicking, a set of options will be shown, allowing for changing the size of the widget, moving it around the screen, adjusting authentication settings and closing the app.
 
 ### Disclaimer:
 
-I am utilizing the Dexcom Share API solely for personal use and do not have any affiliation with Dexcom, Inc. This application is not endorsed, sponsored, or managed by Dexcom, and I do not take any responsibility for the accuracy or performance of the data provided through the API. Furthermore, I do not profit from, or claim ownership of, any Dexcom-related content or services. All trademarks, logos, and brand names belong to their respective owners.
+*I am utilizing the Dexcom Share API solely for personal use and do not have any affiliation with Dexcom, Inc. This application is not endorsed, sponsored, or managed by Dexcom, and I do not take any responsibility for the accuracy or performance of the data provided through the API. Furthermore, I do not profit from, or claim ownership of, any Dexcom-related content or services. All trademarks, logos, and brand names belong to their respective owners.*
