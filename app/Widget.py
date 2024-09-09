@@ -44,12 +44,17 @@ class Widget:
     self._upper_threshold: float = float(self._config['settings']['upper_threshold'])
     self._bottom_threshold: float = float(self._config['settings']['bottom_threshold'])
     self._mmol: bool = self._config['settings'].getboolean('mmol')
-    self._position: Position = Position(
-      x = int(self._config['position']['x']),
-      y = int(self._config['position']['y'])
-    )
     self._moveable: bool = False
-
+    self._position: Position = Position(
+      x = self._config['position']['x'],
+      y = self._config['position']['y']
+    )
+    # Check whether window position is not set to ''
+    try:
+      self._position.x = int(self._position.x)
+      self._position.y = int(self._position.y)
+    except ValueError:
+      self._reset_window_position()
   
   def _initialise_glucose_fetching(self) -> None:
     self._glucose_fetcher = GlucoseFetcher(self._dex_api, self._interval ,self._generate_failed_event, self._generate_udpate_event)

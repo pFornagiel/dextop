@@ -18,7 +18,6 @@ class SetupWindow:
     self._root.mainloop()
   
   def _initialise_settings(self) -> None:
-    # TODO ADD ERRORS CHECK
     self._config = ConfigParser()
     self._config.read(SETTINGS_PATH)
     
@@ -27,7 +26,30 @@ class SetupWindow:
         self._config.add_section(section)
       for key, value in keys.items():
         if not self._config.has_option(section, key) or not self._config[section][key]:
-          self._config.set(section, key, value)
+          self._config[section][key] = value
+        
+        # OPTION SPECIFIC ERROR CHECKS
+        reset_to_default = False
+        if(key in ('x', 'y', 'upper_threshold', 'bottom_threshold')):
+          # EAFP
+          try:
+            float(self._config[section][key])
+          except ValueError:
+            reset_to_default = True
+        
+        if(key == 'interval'):
+          if(not self._config[section][key].isdigit()):
+            reset_to_default = True
+            
+        if(key == 'size'):
+          if(self._config[section][key] not in ('NORMAL', 'LARGE')):
+            reset_to_default = True
+            
+        if(key in ('europe', 'mmol')):
+          if(self._config[section][key] not in ('True', 'False')):
+            reset_to_default = True
+              
+        if(reset_to_default): self._config.set(section,key,value)
           
     with open(SETTINGS_PATH, 'w') as config_file:
       self._config.write(config_file)
@@ -78,7 +100,7 @@ class SetupWindow:
     self._unit_label_var = tk.StringVar(value='mmol/L' if is_mmol else 'mg/dL')
 
     # Reading Interval field inside settings frame
-    tk.Label(self._settings_frame, text="Reading Interval:").grid(row=1, column=0, sticky="w", padx=10, pady=5)
+    tk.Label(self._settings_frame, text="Reading Fetch Interval:").grid(row=1, column=0, sticky="w", padx=10, pady=5)
     validate_command = (self._root.register(self._validate_numeric),'%P')
     self._interval_entry = tk.Entry(self._settings_frame, width=4, validate="all", validatecommand=validate_command)
     self._insert_interval_value()
@@ -89,7 +111,7 @@ class SetupWindow:
     self._interval_label.grid(row=1,column=2, sticky='w')
 
     # Upper Threshold field inside settings frame
-    tk.Label(self._settings_frame, text="Upper Threshold:").grid(row=2, column=0, sticky="w", padx=10, pady=5)
+    tk.Label(self._settings_frame, text="High Glucose Warning:").grid(row=2, column=0, sticky="w", padx=10, pady=5)
     validate_command = (self._root.register(self._validate_numeric),'%P')
     self._upper_threshold_entry = tk.Entry(self._settings_frame, width=4, validate="all", validatecommand=validate_command)
     self._insert_upper_threshold_value()
@@ -100,7 +122,7 @@ class SetupWindow:
     self._upper_threshold_label.grid(row=2,column=2, sticky="w")
     
     # Bottom Threshold field inside settings frame
-    tk.Label(self._settings_frame, text="Bottom Threshold:").grid(row=3, column=0, sticky="w", padx=10, pady=5)
+    tk.Label(self._settings_frame, text="Low Glucose Warning:").grid(row=3, column=0, sticky="w", padx=10, pady=5)
     validate_command = (self._root.register(self._validate_numeric),'%P')
     self._bottom_threshold_entry = tk.Entry(self._settings_frame, width=4, validate="all", validatecommand=validate_command)
     self._insert_bottom_threshold_value()
