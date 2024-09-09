@@ -57,7 +57,7 @@ class Widget:
       self._reset_window_position()
   
   def _initialise_glucose_fetching(self) -> None:
-    self._glucose_fetcher = GlucoseFetcher(self._dex_api, self._interval ,self._generate_failed_event, self._generate_udpate_event)
+    self._glucose_fetcher = GlucoseFetcher(self._dex_api, self._interval ,self._generate_fail_event, self._generate_udpate_event)
     self._glucose_fetcher.start_fetch_loop()
   
   def _initialise_GUI_value_display(self) -> None:
@@ -273,17 +273,10 @@ class Widget:
     self._trend.set(trend)
     self._root.event_generate("<<Update>>",when='now')
 
-  def _generate_failed_event(self,e: DexcomError) -> None:
+  def _generate_fail_event(self,e: DexcomError) -> None:
     self._glucose_value.set('---')
     self._trend.set(0)
     self._root.event_generate("<<Failed>>",when='now')
-    
-    # TODO add log files
-    message_title = 'Error'
-    if(type(e) == '<class \'pydexcom.errors.AccountError\'>'): message_title = 'Authentication Error'
-    if(type(e) == '<class \'pydexcom.errors.SessionError\'>'): message_title = 'Session Error'
-    if(type(e) == '<class \'pydexcom.errors.SessionError\'>'): message_title = 'Settings Error'
-    print(f'{message_title} has occured: {e}')
   
   def _generate_close_event(self) -> None:
     self._root.event_generate("<<Close>>", when='now')
