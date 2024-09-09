@@ -32,8 +32,7 @@ SIZE = {
 # DEFAULT SETTINGS
 DEFAULT_SETTINGS = {
     'credentials': {
-        'login': '',
-        'password': ''
+        'login': ''
     },
     'position': {
         'x': '',
