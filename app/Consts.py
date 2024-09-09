@@ -66,5 +66,6 @@ work_area = monitor_info.get("Work")
 TASKBAR_OFFSET = monitor_area[3]-work_area[3]
 
 # PATH
-SETTINGS_PATH = os.path.join(os.getcwd(), 'app/settings.ini')
-LOGGER_PATH = os.path.join(os.getcwd(), 'logs')
+appdata_path = os.getenv('APPDATA')
+SETTINGS_PATH = os.path.join(appdata_path, 'dextop', 'settings.ini')
+LOGGER_PATH = os.path.join(appdata_path, 'dextop', 'logs')
