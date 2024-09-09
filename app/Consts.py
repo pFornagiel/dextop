@@ -67,3 +67,4 @@ TASKBAR_OFFSET = monitor_area[3]-work_area[3]
 
 # PATH
 SETTINGS_PATH = os.path.join(os.getcwd(), 'app/settings.ini')
+LOGGER_PATH = os.path.join(os.getcwd(), 'logs')
