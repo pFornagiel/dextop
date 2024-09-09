@@ -6,10 +6,12 @@ from pydexcom import errors as dexcom_errors
 from .Consts import *
 import keyring
 from .Widget import Widget
+from .Logger import Logger
 
 class SetupWindow:
   def __init__(self) -> None:
     self._root = tk.Tk()
+    self._logger = Logger(LOGGER_PATH)
     self._initialise_settings()
     self._initialize_window()
 
@@ -157,9 +159,10 @@ class SetupWindow:
       dex_api = DexcomApi(is_europe, login, password)
     except dexcom_errors.DexcomError as e:
       message_title = 'Error'
-      if(type(e) == '<class \'pydexcom.errors.AccountError\'>'): message_title = 'Authentication Error'
-      if(type(e) == '<class \'pydexcom.errors.SessionError\'>'): message_title = 'Session Error'
-      if(type(e) == '<class \'pydexcom.errors.SessionError\'>'): message_title = 'Settings Error'
+      if(isinstance(e,dexcom_errors.AccountError)): message_title = 'Authentication Error'
+      if(isinstance(e,dexcom_errors.SessionError)): message_title = 'Session Error'
+      if(isinstance(e,dexcom_errors.ArgumentError)): message_title = 'Settings Error'
+      self._logger.add_entry(entry=f'{message_title}: {e}')
       tk.messagebox.showwarning(title=message_title, message=f'{str(e)}!')
       self._reset_settings()
       # The Setup Window is open

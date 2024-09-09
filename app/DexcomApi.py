@@ -3,11 +3,16 @@ from pydexcom import Dexcom
 from pydexcom import errors as dexcom_errors
 # Threading
 import threading
+# Logger
+from .Logger import Logger
+# Consts
+from .Consts import LOGGER_PATH
 # Types and dataclasses
 from typing import Callable, Optional
 from dataclasses import dataclass
 # # Error Handling
 # from urllib.error import HTTPError
+
 
 
 
@@ -47,6 +52,7 @@ class GlucoseFetcher:
     self._generate_update_event = generate_update_event
     self._stop_event = threading.Event()
     self._thread: Optional[threading.Thread] = None
+    self._logger = Logger(LOGGER_PATH)
     
   def _fetch_loop(self, interval: int) -> None:
     while(not self._stop_event.is_set()):
@@ -56,6 +62,14 @@ class GlucoseFetcher:
         
       except dexcom_errors.DexcomError as e:
         self._generate_fail_event(e)
+        
+        message_title = 'Error'
+        if(isinstance(e,dexcom_errors.AccountError)): message_title = 'Authentication Error'
+        if(isinstance(e,dexcom_errors.SessionError)): message_title = 'Session Error'
+        if(isinstance(e,dexcom_errors.ArgumentError)): message_title = 'Settings Error'
+        
+        self._logger.add_entry(f'{message_title}: {e}')
+        
       self._stop_event.wait(interval)
          
   def start_fetch_loop(self) -> None:
