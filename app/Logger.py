@@ -4,13 +4,13 @@ from datetime import datetime
 class Logger:
   def __init__(self, path: str) -> None:
     self._PATH = path
-    self._check_valid_path(path)
+    self._check_valid_path()
     
   def _check_valid_path(self) -> None:
-    if(not os.path.isdir(self._PATH)): os.mkdir(self._PATH)
+    if(not os.path.isdir(self._PATH)): os.makedirs(self._PATH)
     
   def add_entry(self, entry: str) -> None:
-    self._check_valid_path(self._PATH)
+    self._check_valid_path()
     
     now = datetime.now()
     month = now.strftime('%m')
