@@ -7,3 +7,5 @@ errors.png
 run_2.py
 app/settings.ini
 logs/*
+dist/*
+build/*
