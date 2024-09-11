@@ -7,6 +7,8 @@ from .Consts import *
 import keyring
 from .Widget import Widget
 from .Logger import Logger
+from PIL import Image, ImageTk
+
 
 class SetupWindow:
   def __init__(self) -> None:
@@ -60,6 +62,10 @@ class SetupWindow:
     self._root.title("Settings")
     self._root.resizable(False,False)
     self._root.withdraw()
+    
+    image = Image.open('./assets/dextop_icon.png')  # Replace with your image file path
+    icon_photo = ImageTk.PhotoImage(image)
+    self._root.iconphoto(True, icon_photo)
 
     # Create a container frame for padding around the entire window
     self._main_frame = tk.Frame(self._root, padx=20, pady=20)  # Add 20px padding around the root

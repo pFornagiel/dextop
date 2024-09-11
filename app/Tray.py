@@ -5,18 +5,9 @@ from typing import Callable
 from dataclasses import dataclass
 
 # Placeholder Image from pystray documentation
-from PIL import Image, ImageDraw
-def create_image(width, height, color1, color2):
-    # Generate an image and draw a pattern
-    image = Image.new('RGB', (width, height), color1)
-    dc = ImageDraw.Draw(image)
-    dc.rectangle(
-        (width // 2, 0, width, height // 2),
-        fill=color2)
-    dc.rectangle(
-        (0, height // 2, width // 2, height),
-        fill=color2)
-    return image
+from PIL import Image
+def create_image():
+    return Image.open('./assets/dextop_icon.png')  # Replace with your image file path
   
 @dataclass
 class TrayCallbacks:
@@ -34,7 +25,7 @@ class TrayIcon:
     self._draggable = False
     self._size = size
     
-    self._tray = pystray.Icon('Dextop', icon=create_image(64, 64, 'black', 'white'), menu=self._initialise_menu())
+    self._tray = pystray.Icon('Dextop', icon=create_image(64, 64), menu=self._initialise_menu())
     
   def _initialise_menu(self):
     return pystray.Menu(
