@@ -21,6 +21,8 @@ The app is a personal project, which was motivated by a need to keep an eye on m
 
 Note: At the moment, the project is developed and tested specifically for Windows. Unix system support may be added in the future.
 
+### Running script locally
+
 1. Clone the repository:
   ```bash
    git clone https://github.com/pFornagiel/dextop.git
@@ -40,7 +42,7 @@ Note: At the moment, the project is developed and tested specifically for Window
 
 ## Using the Widget
 
-The [pydexcom's repository](https://github.com/gagebenne/pydexcom) goves detailed instruction about the user-end usage of Dexcom Share API and I highly encourage to read it through. 
+The [pydexcom's repository](https://github.com/gagebenne/pydexcom) gives detailed instructions about the user-end usage of Dexcom Share API and I highly encourage to read it through. 
 
 A quick summary:
 1. Download the [Dexcom G7 / G6 / G5 / G4 / One+ mobile app](https://www.dexcom.com/apps) and [enable the Share service](https://provider.dexcom.com/education-research/cgm-education-use/videos/setting-dexcom-share-and-follow).
