@@ -26,7 +26,7 @@ class TrayIcon:
     self._draggable = False
     self._size = size
     
-    self._tray = pystray.Icon('Dextop', icon=create_image(64, 64), menu=self._initialise_menu())
+    self._tray = pystray.Icon('Dextop', icon=create_image(), menu=self._initialise_menu())
     
   def _initialise_menu(self) -> pystray.Menu:
     return pystray.Menu(
