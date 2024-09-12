@@ -19,19 +19,22 @@ The app is a personal project, which was motivated by a need to keep an eye on m
 
 ## Installation
 
-Note: At the moment, the project is developed and tested specifically for Windows. Unix system support may be added in the future.
+Note: At the moment, the project is developed and tested specifically for Windows. Unix system support may be added in the future. 
 
-### Running script locally
+#### Disclaimer Regarding False Positives
+If you choose to use the standalone executable installation, please be aware that **the executable files may be auto-detected as false positives** (harmless files seen as a viruses) by some security vendors, [which is a common case when using python-to-exe compilers](https://www.reddit.com/r/learnpython/comments/13igjrl/nuitka_hello_world_binary_detected_as_malware_why/). Currently, I am unable to do anything about this matter, so if this happens the reccomended fix is to add the file to anti-virus exceptions. I assure, that the installer distribution of the application is an exact build of the project as available in the repository. If you have any concerns about the files` integrity or security, it is encouraged to verify it by building the project from the source code yourself.
+
+### Running Script Locally
 
 1. Clone the repository:
   ```bash
    git clone https://github.com/pFornagiel/dextop.git
    cd dextop
   ```
-2. Run the batch script to create a virtual environment and install dependencies:
+2. Run the `venv_setup` batch script from the project`s root folder to create a virtual environment and install dependencies:
 
   ```bash
-  venv_setup.bat
+  scripts/venv_setup.bat
   ```
 3. Activate the virtual environment:
 ```bash
@@ -39,6 +42,29 @@ Note: At the moment, the project is developed and tested specifically for Window
   ```
 
 4. Run `run.py` file
+
+### Compiling Script Locally
+
+[Nuitka](https://nuitka.net/) is the package of choice for the project, when it comes to compiling python files to an independent executable. I have provided a batch script to further simplify this process.
+
+1. Clone the repository:
+  ```bash
+   git clone https://github.com/pFornagiel/dextop.git
+   cd dextop
+  ```
+2. Run the `venv_setup` batch script from the project`s root folder to create a virtual environment and install dependencies:
+  ```bash
+  scripts/venv_setup.bat
+  ```
+3. Run the `nuitka_compile` batch script from the project`s root folder to compile the project into an executable file
+  ```bash
+  scripts/nuitka_compile.bat
+  ```
+4. `Dextop.dist` directory will be created, where an executable `Dextop.exe` file can be used to launch the application.
+
+### Using the Installer
+
+The Releases tab provides the windows installer download link. The installer itself was created using  [InstallForge](https://installforge.net/) and, as said above, it **installs an exact build of the project as available in the repository**. The installer provides step-by-step instructions and installs the compiled build in user's directory of choice.
 
 ## Using the Widget
 
