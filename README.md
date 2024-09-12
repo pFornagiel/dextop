@@ -13,7 +13,7 @@ The app is a personal project, which was motivated by a need to keep an eye on m
 - Always-on-top, unobstructing widget
 - Real-time Dexcom glucose readings
 - Graphical settings interface
-- Position, size customisation and configurability
+- Position and size customisation and configurability
 
 ## Prerequisites
 - Python 3.x
@@ -22,10 +22,11 @@ The app is a personal project, which was motivated by a need to keep an eye on m
 
 ## Installation
 
-Note: At the moment, the project is developed and tested specifically for Windows. Unix system support may be added in the future. 
+> [!NOTE]
+> At the moment, the project is developed and tested specifically for Windows. Unix system support may be added in the future. 
 
-#### Disclaimer Regarding False Positives
-If you choose to use the standalone executable installation, please be aware that **the executable files may be auto-detected as false positives** (harmless files seen as a viruses) by some security vendors, [which is a common case when using python-to-exe compilers](https://www.reddit.com/r/learnpython/comments/13igjrl/nuitka_hello_world_binary_detected_as_malware_why/). Currently, I am unable to do anything about this matter, so if this happens the reccomended fix is to add the file to anti-virus exceptions. I assure, that the installer distribution of the application is an exact build of the project as available in the repository. If you have any concerns about the files` integrity or security, it is encouraged to verify it by building the project from the source code yourself.
+> [!IMPORTANT]
+> If you choose to use the standalone executable installation, please be aware that **the executable files may be auto-detected as false positives** (harmless files seen as a viruses) by some security vendors, [which is a common case when using python-to-exe compilers](https://www.reddit.com/r/learnpython/comments/13igjrl/nuitka_hello_world_binary_detected_as_malware_why/). Currently, I am unable to do anything about this matter, so if this happens the reccomended fix is to add the file to anti-virus exceptions. I assure, that the installer distribution of the application is an exact build of the project as available in the repository. If you have any concerns about the files` integrity or security, it is encouraged to verify it by building the project from the source code yourself.
 
 ### Running Script Locally
 
@@ -67,7 +68,7 @@ If you choose to use the standalone executable installation, please be aware tha
 
 ### Using the Installer
 
-The Releases tab provides the windows installer download link. The installer itself was created using  [InstallForge](https://installforge.net/) and, as said above, it **installs an exact build of the project as available in the repository**. The installer provides step-by-step instructions and installs the compiled build in user's directory of choice.
+[The Releases tab](https://github.com/pFornagiel/dextop/releases/tag/latest) provides the windows installer download link. The installer itself was created using  [InstallForge](https://installforge.net/) and, as said above, it **installs an exact build of the project as available in the repository**. The installer provides step-by-step instructions and installs the compiled build in user's directory of choice.
 
 ## Using the Widget
 
