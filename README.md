@@ -1,5 +1,8 @@
+
 # Dextop Widget
 ## Desktop Dexcom Readings Display
+
+![Github](https://github.com/user-attachments/assets/a9e00921-b8a5-4687-97dc-b9e6387c1552)
 
 Dextop is a Python-based Windows desktop widget which displays real-time Dexcom glucose readings using the Dexcom Share service API provided by [pydexcom](https://github.com/gagebenne/pydexcom). 
 
