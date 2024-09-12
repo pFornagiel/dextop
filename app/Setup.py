@@ -1,12 +1,16 @@
+# GUI
 import tkinter as tk
-import tkinter.messagebox as mb
-from configparser import ConfigParser
+from .Widget import Widget
+# Dexcom Api
 from .DexcomApi import DexcomApi
 from pydexcom import errors as dexcom_errors
+# Config
+from configparser import ConfigParser
 from .Consts import *
+# Utils
 import keyring
-from .Widget import Widget
 from .Logger import Logger
+# Image manipulation
 from PIL import Image, ImageTk
 
 
@@ -63,8 +67,7 @@ class SetupWindow:
     self._root.resizable(False,False)
     self._root.withdraw()
     
-    image = Image.open('./assets/dextop_icon.png')  # Replace with your image file path
-    icon_photo = ImageTk.PhotoImage(image)
+    icon_photo = ImageTk.PhotoImage(Image.open('./assets/dextop_icon.png'))
     self._root.iconphoto(True, icon_photo)
 
     # Create a container frame for padding around the entire window
@@ -164,13 +167,16 @@ class SetupWindow:
     try:
       dex_api = DexcomApi(is_europe, login, password)
     except dexcom_errors.DexcomError as e:
+      
       message_title = 'Error'
       if(isinstance(e,dexcom_errors.AccountError)): message_title = 'Authentication Error'
       if(isinstance(e,dexcom_errors.SessionError)): message_title = 'Session Error'
       if(isinstance(e,dexcom_errors.ArgumentError)): message_title = 'Settings Error'
+      
       self._logger.add_entry(entry=f'{message_title}: {e}')
       tk.messagebox.showwarning(title=message_title, message=f'{str(e)}!')
       self._reset_settings()
+      
       # The Setup Window is open
       if(self._root.state == 'normal'):
         self._password_entry.delete(0,'end')

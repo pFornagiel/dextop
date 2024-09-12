@@ -2,22 +2,18 @@
 import tkinter as tk
 import tksvg
 from .SvgTrends import get_trend_arrow_SVG
+from .Tray import TrayIcon, TrayCallbacks
 # Dexcom Api
 from .DexcomApi import DexcomApi, GlucoseFetcher
 from pydexcom import DexcomError
-# Clicktrough-hacking - win32
+# Clicktrough-hacks - win32
 import win32gui
 import win32con
-# Config Parser
+# Config
 from configparser import ConfigParser
-# Tray icon
-from .Tray import TrayIcon, TrayCallbacks
-# Typing and utility
-
-from dataclasses import dataclass
-
-# Constants
 from .Consts import *
+# Typing
+from dataclasses import dataclass
 
 @dataclass
 class Position:

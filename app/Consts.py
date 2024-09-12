@@ -1,7 +1,9 @@
-from dataclasses import dataclass
-from typing import Tuple, Literal
+# Utils
 import os
 from win32api import GetMonitorInfo, MonitorFromPoint
+# Typing
+from dataclasses import dataclass
+from typing import Tuple, Literal
 
 # SIZING PROPERTIES
 @dataclass

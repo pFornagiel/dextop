@@ -1,13 +1,14 @@
-# Pystray
+# GUI
 import pystray
-# Typing and utils
-from typing import Callable
+# Image manipulation
+from PIL import Image
+# Typing 
+from typing import Callable, Literal
 from dataclasses import dataclass
 
-# Placeholder Image from pystray documentation
-from PIL import Image
-def create_image():
-    return Image.open('./assets/dextop_icon.png')  # Replace with your image file path
+
+def create_image() -> Image:
+  return Image.open('./assets/dextop_icon.png')  # Replace with your image file path
   
 @dataclass
 class TrayCallbacks:
@@ -20,14 +21,14 @@ class TrayCallbacks:
 
 # Class for managing the tray icon
 class TrayIcon:
-  def __init__(self, callbacks: TrayCallbacks, size) -> None:
+  def __init__(self, callbacks: TrayCallbacks, size: Literal['LARGE', 'NORMAL']) -> None:
     self._callbacks = callbacks
     self._draggable = False
     self._size = size
     
     self._tray = pystray.Icon('Dextop', icon=create_image(64, 64), menu=self._initialise_menu())
     
-  def _initialise_menu(self):
+  def _initialise_menu(self) -> pystray.Menu:
     return pystray.Menu(
       pystray.MenuItem(
         'Size',

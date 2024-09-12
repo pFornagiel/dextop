@@ -1,20 +1,14 @@
 # pydexcom
 from pydexcom import Dexcom
 from pydexcom import errors as dexcom_errors
-# Threading
+# Utils
 import threading
-# Logger
 from .Logger import Logger
-# Consts
+# Config
 from .Consts import LOGGER_PATH
-# Types and dataclasses
+# Typing
 from typing import Callable, Optional
 from dataclasses import dataclass
-# # Error Handling
-# from urllib.error import HTTPError
-
-
-
 
 # Dexcom Data Object Class
 @dataclass

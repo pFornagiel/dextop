@@ -1,3 +1,4 @@
+# Utils
 import os
 from datetime import datetime
 
@@ -24,13 +25,3 @@ class Logger:
     time_stamp = now.strftime('[%H:%M %d-%m-%Y]')  # Format: [HH:MM DD-MM-YYYY]
     with open(filename, 'a') as file:
       file.write(f'{time_stamp} {entry}\n')
-  
-    
-    
-  
-  
-
-
-
-    
-    
