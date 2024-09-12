@@ -1,5 +1,6 @@
 # GUI
 import tkinter as tk
+import tkinter.messagebox
 from .Widget import Widget
 # Dexcom Api
 from .DexcomApi import DexcomApi
@@ -10,6 +11,7 @@ from .Consts import *
 # Utils
 import keyring
 from .Logger import Logger
+import requests
 # Image manipulation
 from PIL import Image, ImageTk
 
@@ -166,12 +168,16 @@ class SetupWindow:
     dex_api = None
     try:
       dex_api = DexcomApi(is_europe, login, password)
-    except dexcom_errors.DexcomError as e:
-      
+    except Exception as e:
       message_title = 'Error'
       if(isinstance(e,dexcom_errors.AccountError)): message_title = 'Authentication Error'
       if(isinstance(e,dexcom_errors.SessionError)): message_title = 'Session Error'
       if(isinstance(e,dexcom_errors.ArgumentError)): message_title = 'Settings Error'
+      if(isinstance(e,requests.exceptions.RequestException)): message_title = 'General HTTP Error'
+      if(
+        isinstance(e,requests.exceptions.ConnectionError) or 
+        isinstance(e,requests.exceptions.RetryError)
+      ): message_title = 'Connection Error'
       
       self._logger.add_entry(entry=f'{message_title}: {e}')
       tk.messagebox.showwarning(title=message_title, message=f'{str(e)}!')

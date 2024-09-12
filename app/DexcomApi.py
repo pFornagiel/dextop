@@ -4,6 +4,7 @@ from pydexcom import errors as dexcom_errors
 # Utils
 import threading
 from .Logger import Logger
+import requests
 # Config
 from .Consts import LOGGER_PATH
 # Typing
@@ -30,7 +31,7 @@ class DexcomApi:
     if(not self._dexcom):
       raise Exception('Dexcom API not initialised.')
     
-    # Exception handling done in Widget.py
+    # Exception handling done in GlucoseFetcher
     reading = self._dexcom.get_current_glucose_reading()
     return DexcomData(
       glucose_reading=reading.value, 
@@ -54,13 +55,18 @@ class GlucoseFetcher:
         reading = self._dex_api.fetch_glucose_reading()
         self._generate_update_event(reading.glucose_reading, reading.trend)
         
-      except dexcom_errors.DexcomError as e:
+      except Exception as e:
         self._generate_fail_event(e)
         
         message_title = 'Error'
         if(isinstance(e,dexcom_errors.AccountError)): message_title = 'Authentication Error'
         if(isinstance(e,dexcom_errors.SessionError)): message_title = 'Session Error'
         if(isinstance(e,dexcom_errors.ArgumentError)): message_title = 'Settings Error'
+        if(isinstance(e,requests.exceptions.RequestException)): message_title = 'General HTTP Error'
+        if(
+          isinstance(e,requests.exceptions.ConnectionError) or 
+          isinstance(e,requests.exceptions.RetryError)
+        ): message_title = 'Connection Error'
         
         self._logger.add_entry(f'{message_title}: {e}')
         
