@@ -73,7 +73,7 @@ class TrayIcon:
     
   def _open_settings(self) -> None:
     self._callbacks.generate_open_settings_event()
-    self._tray.stop()
+    self._tray._hide()
   
   def _toggle_drag(self) -> None:
     self._draggable = not self._draggable
@@ -88,6 +88,10 @@ class TrayIcon:
     if(self._size == size): return
     self._size = size
     self._callbacks.generate_resize_event(size)
+  
+  def show_tray(self):
+    if(not self._tray.visible):
+      self._tray._show()
   
   def run_tray_icon(self) -> None:
     self._tray.run_detached()
