@@ -20,6 +20,7 @@ class SetupWindow:
   def __init__(self) -> None:
     self._root = tk.Tk()
     self._logger = Logger(LOGGER_PATH)
+    self._widget = None
     self._initialise_settings()
     self._initialize_window()
 
@@ -196,7 +197,14 @@ class SetupWindow:
       # Hide setup window and create the widget
       if(self._root.wm_state() == 'normal'):
         self._root.withdraw()
-      Widget(self._root, dex_api)
+      if(self._widget is None):
+        self._widget = Widget(self._root, dex_api, self._config)
+        self._widget._glucose_fetcher.start_fetch_loop()
+      else:
+        if(self._widget._root.wm_state() != 'normal'):
+          self._widget._root.deiconify()
+          self._widget._glucose_fetcher.start_fetch_loop()
+          self._widget._tray_icon._tray._show()
   
   # Saving and reseting settings
   

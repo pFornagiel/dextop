@@ -21,40 +21,32 @@ class Position:
   y: int
 
 class Widget:
-  def __init__(self, parent_root: tk.Tk, dex_api: DexcomApi) -> None:
+  def __init__(self, parent_root: tk.Tk, dex_api: DexcomApi, config: ConfigParser) -> None:
     self._parent_root = parent_root
     self._root = tk.Toplevel()
     self._dex_api = dex_api
+    self._config = config
     self._initialise_settings()
     self._initialise_GUI_value_display()
-    self._initialise_glucose_fetching()
+    self._initialise_glucose_fetcher()
     self._initialise_widget()
     self._initialise_tray()
-    self._root.mainloop()
+    print('test')
   
   def _initialise_settings(self) -> None:
-    self._config = ConfigParser()
-    self._config.read(SETTINGS_PATH)
-    self._size_config: Sizing = SIZE[self._config['settings']['size']]
-    self._interval: int = int(self._config['settings']['interval'])
-    self._upper_threshold: float = float(self._config['settings']['upper_threshold'])
-    self._bottom_threshold: float = float(self._config['settings']['bottom_threshold'])
-    self._mmol: bool = self._config['settings'].getboolean('mmol')
+    self._size_config: Sizing = SIZE[DEFAULT_SETTINGS['settings']['size']]
+    self._interval: int = int(DEFAULT_SETTINGS['settings']['interval'])
+    self._upper_threshold: float = float(DEFAULT_SETTINGS['settings']['upper_threshold'])
+    self._bottom_threshold: float = float(DEFAULT_SETTINGS['settings']['bottom_threshold'])
+    self._mmol: bool = DEFAULT_SETTINGS['settings']['mmol'] == 'True'
     self._moveable: bool = False
     self._position: Position = Position(
-      x = self._config['position']['x'],
-      y = self._config['position']['y']
+      x = DEFAULT_SETTINGS['position']['x'],
+      y = DEFAULT_SETTINGS['position']['y']
     )
-    # Check whether window position is not set to ''
-    try:
-      self._position.x = int(self._position.x)
-      self._position.y = int(self._position.y)
-    except ValueError:
-      self._reset_window_position()
   
-  def _initialise_glucose_fetching(self) -> None:
+  def _initialise_glucose_fetcher(self) -> None:
     self._glucose_fetcher = GlucoseFetcher(self._dex_api, self._interval ,self._generate_fail_event, self._generate_udpate_event)
-    self._glucose_fetcher.start_fetch_loop()
   
   def _initialise_GUI_value_display(self) -> None:
     self._glucose_value = tk.StringVar(value='---')
@@ -95,6 +87,9 @@ class Widget:
     self._root.bind("<<Resize>>", self._on_resize)
     self._root.bind("<<Settings>>", self._on_open_settings)
 
+    
+    # withdraw window upon, so it does not showup right away
+    self._root.withdraw()
     
     # Position the window
     screen_width, screen_height = self._root.winfo_screenwidth(), self._root.winfo_screenheight()
@@ -260,7 +255,16 @@ class Widget:
     if(self._parent_root.wm_state() != 'normal'):
       self._parent_root.deiconify()
     self._glucose_fetcher.stop_fetch_loop()
-    self._root.destroy()
+    self._root.withdraw()
+    # self._root.destroy()
+    # self._parent_root = None
+    # del self._root
+    # self._root = None
+    # self._dex_api = None
+    # del self._glucose_fetcher
+    # self._glucose_fetcher = None
+    # del self._tray_icon
+    # self._tray_icon = None
 
   # Event generating methods
   
@@ -314,3 +318,31 @@ class Widget:
     if(glucose_value != '---' and float(glucose_value) >= self._upper_threshold):
       colour = WARNING_UPPER
     return colour
+  
+  def read_settings(self) -> None:
+    self._size_config: Sizing = SIZE[self._config['settings']['size']]
+    self._interval: int = int(self._config['settings']['interval'])
+    self._upper_threshold: float = float(self._config['settings']['upper_threshold'])
+    self._bottom_threshold: float = float(self._config['settings']['bottom_threshold'])
+    self._mmol: bool = self._config['settings'].getboolean('mmol')
+    self._moveable: bool = False
+    self._position: Position = Position(
+      x = self._config['position']['x'],
+      y = self._config['position']['y']
+    )
+    # Check whether window position is not set to ''
+    try:
+      self._position.x = int(self._position.x)
+      self._position.y = int(self._position.y)
+    except ValueError:
+      self._reset_window_position()
+      
+  
+  def set_glucose_fetcher(self, dex_api: DexcomApi):
+    self._glucose_fetcher = GlucoseFetcher(dex_api, self._interval, self._generate_fail_event, self._generate_udpate_event)
+      
+  def start_glucose_fetching(self) -> None:
+    if(self._glucose_fetcher is None):
+      raise Exception('The glucose fetcher has not been set!')
+    self._glucose_fetcher.start_fetch_loop()
+    
