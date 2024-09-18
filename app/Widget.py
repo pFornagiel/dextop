@@ -171,7 +171,7 @@ class Widget:
     self._trend_label.config(image=svg)
     self._trend_label.image = svg
     
-    self._root.update_idletasks()
+    # self._root.update_idletasks()
   
   def _on_fail(self,_) -> None:
     self._glucose_value_label.config(fg=TEXT)
@@ -179,7 +179,7 @@ class Widget:
     self._trend_label.config(image=svg)
     self._trend_label.image = svg
     
-    self._root.update_idletasks()
+    # self._root.update_idletasks()
   
   def _on_enable_drag(self,_) -> None:
     self._disable_clicktrough()
