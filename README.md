@@ -45,7 +45,7 @@ The app is a personal project, which was motivated by a need to keep an eye on m
   .venv\Scripts\activate
   ```
 
-4. Run `run.py` file
+4. Run `Dextop.py` file
 
 ### Compiling Script Locally
 
@@ -70,6 +70,8 @@ The app is a personal project, which was motivated by a need to keep an eye on m
 
 [The Releases tab](https://github.com/pFornagiel/dextop/releases/tag/latest) provides the windows installer download link. The installer itself was created using  [InstallForge](https://installforge.net/) and, as said above, it **installs an exact build of the project as available in the repository**. The installer provides step-by-step instructions and installs the compiled build in user's directory of choice.
 
+#### Additional option: [Allowing the app to launch at startup](https://www.dell.com/support/kbdoc/en-us/000124550/how-to-add-app-to-startup-in-windows-10)
+
 ## Using the Widget
 
 The [pydexcom's repository](https://github.com/gagebenne/pydexcom) gives detailed instructions about the user-end usage of Dexcom Share API and I highly encourage to read it through. 
@@ -79,9 +81,13 @@ A quick summary:
 
 2. In the application, log in using **your** Dexcom Account credentials, **not the Dexcom Share follower's or manager's**.
 
-3. Make sure to toggle the *Europe* checkbox in the app settings, if you happen to use the application outside of America. Note, that *Password not valid!* may also be caused by this option, if the user happens to be using the app in the wrong region.
+3. Make sure to toggle the *Europe* checkbox in the app settings, if you happen to use the application outside of America. Note, that *Password not valid!* error may be caused by this option, if the user happens to be using the app in the wrong region.
 
-After logging in, the widget itself can be configured using a tray icon associated with it. By right clicking, a set of options will be shown, allowing for changing the size of the widget, moving it around the screen, adjusting authentication settings and closing the app.
+To access Dexcom readings, the app has to be provided an internet connection. After logging in, the widget can be configured using a tray icon associated with it. By right clicking, a set of options will be shown, allowing for changing the size of the widget, moving it around the screen, adjusting settings and closing the app.
+
+The app makes use of `%appdata%/dextop` directory, which stores the following files:
+- `settings.ini` configuration file
+- logs of encountered errors
 
 ## Disclaimer:
 
