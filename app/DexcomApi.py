@@ -40,14 +40,15 @@ class DexcomApi:
 
 # Class initiating periodical fetch loop
 class GlucoseFetcher:
-  def __init__(self, dex_api: DexcomApi, interval:int, generate_fail_event: Callable[[],None], generate_update_event: Callable[[str,int,int],None]) -> None:
-    self._dex_api = dex_api
+  def __init__(self, interval:int, generate_fail_event: Callable[[],None], generate_update_event: Callable[[str,int,int],None]) -> None:
     self._interval = interval * 60
     self._generate_fail_event = generate_fail_event
     self._generate_update_event = generate_update_event
     self._stop_event = threading.Event()
     self._thread: Optional[threading.Thread] = None
     self._logger = Logger(LOGGER_PATH)
+    
+    self._dex_api: Optional[DexcomApi] = None
     
   def _fetch_loop(self, interval: int) -> None:
     while(not self._stop_event.is_set()):
@@ -71,8 +72,14 @@ class GlucoseFetcher:
         self._logger.add_entry(f'{message_title}: {e}')
         
       self._stop_event.wait(interval)
+
+  def setDexcomApi(self, dex_api: DexcomApi) -> None:
+    self._dex_api = dex_api
          
   def start_fetch_loop(self) -> None:
+    if(self._dex_api is None):
+      raise Exception('DexcomApi not set!')
+    
     if(not self._thread or not self._thread.is_alive()):
       self._stop_event.clear()
       self._thread = threading.Thread(target=self._fetch_loop, args=([self._interval]))
@@ -82,3 +89,4 @@ class GlucoseFetcher:
     if(self._thread and self._thread.is_alive()):
       self._stop_event.set()
       self._thread.join()
+      self._thread = None
