@@ -271,7 +271,7 @@ class Widget:
     window_width, window_height = self._size_config.window
     self._position.x,self._position.y = screen_width - window_width, screen_height- window_height - TASKBAR_OFFSET
     
-    self._root.geometry(f'+{self._position.x}+{self._position.y}')
+    self._root.geometry(f'{window_width}x{window_height}+{self._position.x}+{self._position.y}')
     self._config['position'] = {
       'x': self._position.x,
       'y': self._position.y
