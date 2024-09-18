@@ -35,19 +35,19 @@ class TrayIcon:
         pystray.Menu(
           pystray.MenuItem(
             'Normal',
-            lambda: self._resize('NORMAL'),
+            lambda: self._on_resize('NORMAL'),
             checked = lambda _: self._size == 'NORMAL'
           ),
           pystray.MenuItem(
             'Large',
-            lambda: self._resize('LARGE'),
+            lambda: self._on_resize('LARGE'),
             checked = lambda _: self._size == 'LARGE'
           )
         )
       ),
       pystray.MenuItem(
         'Draggable',
-        self._toggle_drag,
+        self._on_toggle_drag,
         checked= lambda _: self._draggable
     ),
       pystray.MenuItem(
@@ -57,25 +57,25 @@ class TrayIcon:
     ),
       pystray.MenuItem(
         'Settings',
-        self._open_settings,
+        self._on_open_settings,
         checked=None
       ),
       pystray.MenuItem(
         'Close',
-        self._close_tray,
+        self._on_close_tray,
         checked=None
       )
     )
   
-  def _close_tray(self) -> None:
+  def _on_close_tray(self) -> None:
     self._callbacks.generate_close_event()
     self._tray.stop()
     
-  def _open_settings(self) -> None:
+  def _on_open_settings(self) -> None:
     self._callbacks.generate_open_settings_event()
     self._tray._hide()
   
-  def _toggle_drag(self) -> None:
+  def _on_toggle_drag(self) -> None:
     self._draggable = not self._draggable
     self._tray.update_menu()  
     
@@ -84,14 +84,26 @@ class TrayIcon:
     else:
       self._callbacks.generate_disable_drag_event()
   
-  def _resize(self,size) -> None:
+  def _on_resize(self,size) -> None:
     if(self._size == size): return
     self._size = size
     self._callbacks.generate_resize_event(size)
+    
+  # Public methods
   
-  def show_tray(self):
-    if(not self._tray.visible):
-      self._tray._show()
+  def show_tray(self) -> None:
+    # if(not self._tray.visible):
+    self._tray._show()
   
   def run_tray_icon(self) -> None:
     self._tray.run_detached()
+  
+  # to use, when the closing happens, becuase parent of widget was closed
+  def close_tray(self) -> None:
+    self._tray.stop()
+  
+  def hide_tray(self) -> None:
+    self._tray._hide()
+  
+  def set_size(self, size) -> None:
+    self._size = size

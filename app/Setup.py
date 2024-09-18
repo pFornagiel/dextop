@@ -20,8 +20,8 @@ class SetupWindow:
   def __init__(self) -> None:
     self._root = tk.Tk()
     self._logger = Logger(LOGGER_PATH)
-    self._widget = None
     self._initialise_settings()
+    self._widget = Widget(self._root, self._config)
     self._initialize_window()
 
     self._skip_setup() if self._check_logged_in() else self._root.deiconify()
@@ -69,6 +69,9 @@ class SetupWindow:
     self._root.title("Settings")
     self._root.resizable(False,False)
     self._root.withdraw()
+    
+    # On window close
+    self._root.protocol("WM_DELETE_WINDOW", self._on_close)
     
     icon_photo = ImageTk.PhotoImage(Image.open('./assets/dextop_icon.png'))
     self._root.iconphoto(True, icon_photo)
@@ -163,12 +166,19 @@ class SetupWindow:
     x_coordinate = (screen_width // 2) - (window_width // 2)
     y_coordinate = (screen_height // 2) - (window_height // 2)
     self._root.geometry(f"+{x_coordinate}+{y_coordinate}")
-
     
-  def _initialise_dextop_widget(self, login: str, password: str, is_europe: bool, interval:str, upper_threshold: str, bottom_threshold: str, mmol: bool) -> None:
-    dex_api = None
+  def _show_dextop_widget(self, login: str, password: str, is_europe: bool, interval:str, upper_threshold: str, bottom_threshold: str, mmol: bool) -> None:
     try:
       dex_api = DexcomApi(is_europe, login, password)
+      self._widget.set_glucose_fetcher(dex_api)
+      self._save_settings(login,password,is_europe,interval, upper_threshold, bottom_threshold, mmol)
+      # Hide setup window and create the widget
+      if(self._root.wm_state() == 'normal'):
+        self._root.withdraw()
+      if(self._widget._root.wm_state() != 'normal'):
+        self._widget.configure_widget()
+        self._widget._root.deiconify()
+        
     except Exception as e:
       message_title = 'Error'
       if(isinstance(e,dexcom_errors.AccountError)): message_title = 'Authentication Error'
@@ -191,20 +201,6 @@ class SetupWindow:
       # Setup Window is withdrawn
       else:
         self._root.deiconify()
-
-    if(dex_api): 
-      self._save_settings(login,password,is_europe,interval, upper_threshold, bottom_threshold, mmol)
-      # Hide setup window and create the widget
-      if(self._root.wm_state() == 'normal'):
-        self._root.withdraw()
-      if(self._widget is None):
-        self._widget = Widget(self._root, dex_api, self._config)
-        self._widget._glucose_fetcher.start_fetch_loop()
-      else:
-        if(self._widget._root.wm_state() != 'normal'):
-          self._widget._root.deiconify()
-          self._widget._glucose_fetcher.start_fetch_loop()
-          self._widget._tray_icon._tray._show()
   
   # Saving and reseting settings
   
@@ -291,11 +287,11 @@ class SetupWindow:
     bottom_threshold = self._config['settings']['bottom_threshold']
     mmol = self._config['settings'].getboolean('mmol')
     
-    self._initialise_dextop_widget(login,password,is_europe,interval, upper_threshold, bottom_threshold, mmol)
+    self._show_dextop_widget(login,password,is_europe,interval, upper_threshold, bottom_threshold, mmol)
     
   # Event handlers
   
-  def _on_mmol_button_click(self):
+  def _on_mmol_button_click(self) -> None:
     is_mmol = self._mmol_var.get()
     self._unit_label_var.set('mmol/L' if is_mmol else 'mg/dL')
     
@@ -329,7 +325,12 @@ class SetupWindow:
     upper_threshold = self._upper_threshold_entry.get()
     bottom_threshold = self._bottom_threshold_entry.get()
     mmol = self._mmol_var.get()
-    self._initialise_dextop_widget(login,password,is_europe, interval, upper_threshold, bottom_threshold, mmol)
+    self._show_dextop_widget(login,password,is_europe, interval, upper_threshold, bottom_threshold, mmol)
+    # Run this after confirming the settings
+    
+  def _on_close(self) -> None:
+    self._widget.close_widget()
+    self._root.destroy()
   
   # Keyring helpers
   

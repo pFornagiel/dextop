@@ -14,6 +14,7 @@ from configparser import ConfigParser
 from .Consts import *
 # Typing
 from dataclasses import dataclass
+from typing import Optional
 
 @dataclass
 class Position:
@@ -21,17 +22,15 @@ class Position:
   y: int
 
 class Widget:
-  def __init__(self, parent_root: tk.Tk, dex_api: DexcomApi, config: ConfigParser) -> None:
+  def __init__(self, parent_root: tk.Tk, config: ConfigParser) -> None:
     self._parent_root = parent_root
     self._root = tk.Toplevel()
-    self._dex_api = dex_api
     self._config = config
     self._initialise_settings()
+    self._glucose_fetcher = GlucoseFetcher(self._interval, self._generate_fail_event, self._generate_udpate_event)
     self._initialise_GUI_value_display()
-    self._initialise_glucose_fetcher()
     self._initialise_widget()
     self._initialise_tray()
-    print('test')
   
   def _initialise_settings(self) -> None:
     self._size_config: Sizing = SIZE[DEFAULT_SETTINGS['settings']['size']]
@@ -44,9 +43,6 @@ class Widget:
       x = DEFAULT_SETTINGS['position']['x'],
       y = DEFAULT_SETTINGS['position']['y']
     )
-  
-  def _initialise_glucose_fetcher(self) -> None:
-    self._glucose_fetcher = GlucoseFetcher(self._dex_api, self._interval ,self._generate_fail_event, self._generate_udpate_event)
   
   def _initialise_GUI_value_display(self) -> None:
     self._glucose_value = tk.StringVar(value='---')
@@ -64,6 +60,7 @@ class Widget:
     )
     self._tray_icon = TrayIcon(callbacks, self._size_config.size)
     self._tray_icon.run_tray_icon()
+    self._tray_icon.hide_tray()
     
 
   def _initialise_widget(self) -> None:
@@ -91,21 +88,6 @@ class Widget:
     # withdraw window upon, so it does not showup right away
     self._root.withdraw()
     
-    # Position the window
-    screen_width, screen_height = self._root.winfo_screenwidth(), self._root.winfo_screenheight()
-    window_width, window_height =  self._size_config.window
-      
-    if(self._position.x == '' or self._position.y == ''):
-      self._position.x, self._position.y = screen_width - window_width, screen_height - window_height - TASKBAR_OFFSET
-      self._config['position'] = {
-        'x': str(self._position.x),
-        'y': str(self._position.y)
-      }
-      with open(SETTINGS_PATH, 'w') as configfile:
-        self._config.write(configfile)
-        
-    self._root.geometry(f'{window_width}x{window_height}+{self._position.x}+{self._position.y}')
-    
     # Set text colour
     colour = self._get_colour()
     # Get text-related size configs
@@ -129,7 +111,6 @@ class Widget:
     # Trend arrow label displaying SVG
     svg = tksvg.SvgImage(data=get_trend_arrow_SVG(self._trend.get(), colour, svg_size))
     
-    # svg = ImageTk.getimage(svg)
     self._trend_label = tk.Label(
       self._frame1, 
       image=svg, 
@@ -177,7 +158,8 @@ class Widget:
   def _on_close(self,_) -> None:
     self._glucose_fetcher.stop_fetch_loop()
     self._root.destroy()
-    self._parent_root.destroy()
+    if(self._parent_root):
+      self._parent_root.destroy()
   
   def _on_update(self, _) -> None:
     trend = self._trend.get()
@@ -244,27 +226,15 @@ class Widget:
     self._trend_label.config(image=svg)
     self._trend_label.image = svg
     
-    self._root.update_idletasks()
-    
     self._config['settings']['size'] = self._size_config.size
     with open(SETTINGS_PATH, 'w') as config_file:
       self._config.write(config_file)
       
-    
   def _on_open_settings(self, _) -> None:
     if(self._parent_root.wm_state() != 'normal'):
       self._parent_root.deiconify()
     self._glucose_fetcher.stop_fetch_loop()
     self._root.withdraw()
-    # self._root.destroy()
-    # self._parent_root = None
-    # del self._root
-    # self._root = None
-    # self._dex_api = None
-    # del self._glucose_fetcher
-    # self._glucose_fetcher = None
-    # del self._tray_icon
-    # self._tray_icon = None
 
   # Event generating methods
   
@@ -318,31 +288,57 @@ class Widget:
     if(glucose_value != '---' and float(glucose_value) >= self._upper_threshold):
       colour = WARNING_UPPER
     return colour
+
+  def _update_widget(self) -> None:
+    self._units.set('mg/dL' if not self._mmol else 'mmol/L')
+    glucose_size, unit_size = self._size_config.font_glucose, self._size_config.font_units
+    self._glucose_value_label.config(font=('Inter', glucose_size))
+    self._unit_label.config(font=('Inter', unit_size))
+    
+    try:
+      # Check whether window position is not set to ''
+      self._position.x = int(self._position.x)
+      self._position.y = int(self._position.y)
+      
+      # Position the window
+      window_width, window_height =  self._size_config.window
+          
+      self._root.geometry(f'{window_width}x{window_height}+{self._position.x}+{self._position.y}')
+    except ValueError:
+      self._reset_window_position()
+  
+  # Public methods
   
   def read_settings(self) -> None:
     self._size_config: Sizing = SIZE[self._config['settings']['size']]
+    self._tray_icon.set_size(self._config['settings']['size'])
     self._interval: int = int(self._config['settings']['interval'])
     self._upper_threshold: float = float(self._config['settings']['upper_threshold'])
     self._bottom_threshold: float = float(self._config['settings']['bottom_threshold'])
     self._mmol: bool = self._config['settings'].getboolean('mmol')
+    
     self._moveable: bool = False
     self._position: Position = Position(
       x = self._config['position']['x'],
       y = self._config['position']['y']
     )
-    # Check whether window position is not set to ''
-    try:
-      self._position.x = int(self._position.x)
-      self._position.y = int(self._position.y)
-    except ValueError:
-      self._reset_window_position()
-      
-  
-  def set_glucose_fetcher(self, dex_api: DexcomApi):
-    self._glucose_fetcher = GlucoseFetcher(dex_api, self._interval, self._generate_fail_event, self._generate_udpate_event)
+    self._update_widget()
+    
+  def set_glucose_fetcher(self, dex_api: DexcomApi) -> None:
+    self._glucose_fetcher.setDexcomApi(dex_api)
       
   def start_glucose_fetching(self) -> None:
     if(self._glucose_fetcher is None):
-      raise Exception('The glucose fetcher has not been set!')
+      raise Exception('The glucose fetcher not set!')
+    # exception handling done in Setup.py
     self._glucose_fetcher.start_fetch_loop()
-    
+  
+  def configure_widget(self) -> None:
+    self.read_settings()
+    self.start_glucose_fetching()
+    self._tray_icon.show_tray()
+  
+  def close_widget(self) -> None:
+    self._glucose_fetcher.stop_fetch_loop()
+    self._tray_icon.close_tray()
+    self._root.destroy()
