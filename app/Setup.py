@@ -110,7 +110,7 @@ class SetupWindow:
     self._settings_frame = tk.Frame(self._main_frame, borderwidth=1)
     
     # MMOL/L checkbox
-    is_mmol = self._config['settings']['mmol']
+    is_mmol = self._config['settings'].getboolean('mmol')
     self._mmol_var = tk.BooleanVar(value=is_mmol)
     self._mmol_checkbox = tk.Checkbutton(self._settings_frame, text="Readings in mmol/L", variable=self._mmol_var, command=self._on_mmol_button_click)
     self._mmol_checkbox.grid(row=0, column=0, columnspan=2, padx=10, pady=5)
