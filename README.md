@@ -68,7 +68,9 @@ The app is a personal project, which was motivated by a need to keep an eye on m
 
 ### Using the Installer
 
-[The Releases tab](https://github.com/pFornagiel/dextop/releases) provides the windows installer download link. The installer itself was created using  [InstallForge](https://installforge.net/) and, as said above, it **installs an exact build of the project as available in the repository**. The installer provides step-by-step instructions and installs the compiled build in user's directory of choice.
+[The Releases tab](https://github.com/pFornagiel/dextop/releases) provides the windows installer download link. The installer itself was created using  [InstallForge](https://installforge.net/) and, as said above, it **installs an exact build of the project as available in the repository**. The installer provides step-by-step instructions and installs the compiled build in user's directory of choice. 
+
+Note, that running the installer will probably trigger *Windows protected your PC* window. It is a standard windows security measure, which is triggered when unknown executable is run. In order to proceed with the installation, click the `More Info` button and choose `Run anyway` option.
 
 #### Additional option: [Allowing the app to launch at startup](https://www.dell.com/support/kbdoc/en-us/000124550/how-to-add-app-to-startup-in-windows-10)
 
@@ -79,7 +81,7 @@ The [pydexcom's repository](https://github.com/gagebenne/pydexcom) gives detaile
 A quick summary and step-by-step instructions:
 1. Download the [Dexcom G7 / G6 / G5 / G4 / One+ mobile app](https://www.dexcom.com/apps) and [enable the Share service](https://provider.dexcom.com/education-research/cgm-education-use/videos/setting-dexcom-share-and-follow).
 
-2. In the application, log in using **your** Dexcom Account credentials, **not the Dexcom Share follower's or manager's**.
+2. In the application, log in using <ins>**your**</ins> Dexcom Account credentials, <ins>not the Dexcom Share follower's or manager's</ins>.
 
 3. Make sure to toggle the *Europe* checkbox in the app settings, if you happen to use the application outside of America. Note, that *Password not valid!* error may be caused by this option, if the user happens to be using the app in the wrong region.
 
