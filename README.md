@@ -72,18 +72,23 @@ The app is a personal project, which was motivated by a need to keep an eye on m
 
 #### Additional option: [Allowing the app to launch at startup](https://www.dell.com/support/kbdoc/en-us/000124550/how-to-add-app-to-startup-in-windows-10)
 
-## Using the Widget
+## Widget Usage Instructions
 
 The [pydexcom's repository](https://github.com/gagebenne/pydexcom) gives detailed instructions about the user-end usage of Dexcom Share API and I highly encourage to read it through. 
 
-A quick summary:
+A quick summary and step-by-step instructions:
 1. Download the [Dexcom G7 / G6 / G5 / G4 / One+ mobile app](https://www.dexcom.com/apps) and [enable the Share service](https://provider.dexcom.com/education-research/cgm-education-use/videos/setting-dexcom-share-and-follow).
 
 2. In the application, log in using **your** Dexcom Account credentials, **not the Dexcom Share follower's or manager's**.
 
 3. Make sure to toggle the *Europe* checkbox in the app settings, if you happen to use the application outside of America. Note, that *Password not valid!* error may be caused by this option, if the user happens to be using the app in the wrong region.
 
-To access Dexcom readings, the app has to be provided an internet connection. After logging in, the widget can be configured using a tray icon associated with it. By right clicking, a set of options will be shown, allowing for changing the size of the widget, moving it around the screen, adjusting settings and closing the app.
+To access Dexcom readings, the app needs to be provided an internet connection. After logging in, the widget can be configured using a tray icon associated with it (an icon in the bottom-right corner of the taskbar). By right clicking the icon, a set of options will be shown:
+- `Size`, allows for choosing one of available sizes for the widget.
+- `Draggable`, allows for moving the widget around the screen. When the option is disactivated, the widget is semitransparent, uninteractable and click-trough. After toggling On the option, the widget stops being transparent and can be dragged around using the mouse. Position the widget on the screen while *Draggable* option is On and when you are satisfied, toggle it Off to save its new location.
+- `Reset Position`, resets widget's position to default (bottom-right corner of the screen).
+- `Settings`, opens *Settings* window, where user credentials and other options can be set.
+- `Close`, closes the applicaiton.
 
 The app makes use of `%appdata%/dextop` directory, which stores the following files:
 - `settings.ini` configuration file
