@@ -166,6 +166,7 @@ class Widget:
     colour = self._get_colour()
     
     self._glucose_value_label.config(fg=colour)
+    self._unit_label.config(fg=colour)
     
     svg = tksvg.SvgImage(data=get_trend_arrow_SVG(trend,colour,self._size_config.svg))
     self._trend_label.config(image=svg)
@@ -283,9 +284,9 @@ class Widget:
   def _get_colour(self) -> str:
     glucose_value = self._glucose_value.get()
     colour = TEXT
-    if(glucose_value != '---' and float(glucose_value) <= self._bottom_threshold):
+    if(glucose_value not in ('---', '') and float(glucose_value) <= self._bottom_threshold):
       colour = WARNING_BOTTOM
-    if(glucose_value != '---' and float(glucose_value) >= self._upper_threshold):
+    if(glucose_value not in ('---', '')and float(glucose_value) >= self._upper_threshold):
       colour = WARNING_UPPER
     return colour
 
@@ -334,8 +335,8 @@ class Widget:
     self._glucose_fetcher.start_fetch_loop()
   
   def configure_widget(self) -> None:
-    self.read_settings()
     self.start_glucose_fetching()
+    self.read_settings()
     self._tray_icon.show_tray()
   
   def close_widget(self) -> None:
