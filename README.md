@@ -68,7 +68,7 @@ The app is a personal project, which was motivated by a need to keep an eye on m
 
 ### Using the Installer
 
-[The Releases tab](https://github.com/pFornagiel/dextop/releases/tag/latest) provides the windows installer download link. The installer itself was created using  [InstallForge](https://installforge.net/) and, as said above, it **installs an exact build of the project as available in the repository**. The installer provides step-by-step instructions and installs the compiled build in user's directory of choice.
+[The Releases tab](https://github.com/pFornagiel/dextop/releases) provides the windows installer download link. The installer itself was created using  [InstallForge](https://installforge.net/) and, as said above, it **installs an exact build of the project as available in the repository**. The installer provides step-by-step instructions and installs the compiled build in user's directory of choice.
 
 #### Additional option: [Allowing the app to launch at startup](https://www.dell.com/support/kbdoc/en-us/000124550/how-to-add-app-to-startup-in-windows-10)
 
