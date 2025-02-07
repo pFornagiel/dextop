@@ -81,19 +81,19 @@ class GlucoseFetcher:
       try:
         self._fetch_and_update()
       except dexcom_errors.AccountError as e:
-        self._handle_fetch_error(e, f'Authentication Error: {e}', critical=True)
+        self._handle_fetch_error(f'Authentication Error: {e}')
       except dexcom_errors.SessionError as e:
-        self._handle_fetch_error(e, f'Session Error: {e}', critical=True)
+        self._handle_fetch_error(f'Session Error: {e}')
       except dexcom_errors.ArgumentError as e:
-        self._handle_fetch_error(e, f'Settings Error: {e}')
+        self._handle_fetch_error(f'Settings Error: {e}')
       except (requests.exceptions.ConnectionError, requests.exceptions.RetryError) as e:
-        self._handle_fetch_error(e, f'Connection Error: {e}', retry=True)
+        self._handle_fetch_error(f'Connection Error: {e}', retry=True)
       except requests.exceptions.RequestException as e:
-        self._handle_fetch_error(e, f'General HTTP Error: {e}', retry=True)
+        self._handle_fetch_error(f'General HTTP Error: {e}', retry=True)
       except NoGlucoseDataError as e:
-        self._handle_fetch_error(e, f'Data error: {e}', retry=True)
+        self._handle_fetch_error(f'Data error: {e}', retry=True)
       except Exception as e:
-        self._handle_fetch_error(e, 'Unexpected Error')
+        self._handle_fetch_error('Unexpected Error')
         
       self._stop_event.wait(interval)
 
