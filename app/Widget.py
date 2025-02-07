@@ -15,6 +15,8 @@ from .Consts import *
 # Typing
 from dataclasses import dataclass
 from typing import Optional
+# Exceptions
+from .Exceptions import GlucoseFetcherNotInitialisedError
 
 @dataclass
 class Position:
@@ -330,8 +332,8 @@ class Widget:
       
   def start_glucose_fetching(self) -> None:
     if(self._glucose_fetcher is None):
-      raise Exception('The glucose fetcher not set!')
-    # exception handling done in Setup.py
+      raise GlucoseFetcherNotInitialisedError()
+      # exception handled in Setup.py
     self._glucose_fetcher.start_fetch_loop()
   
   def configure_widget(self) -> None:

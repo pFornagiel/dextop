@@ -5,11 +5,14 @@ from pydexcom import errors as dexcom_errors
 import threading
 from .Logger import Logger
 import requests
+import time
 # Config
 from .Consts import LOGGER_PATH
 # Typing
 from typing import Callable, Optional
 from dataclasses import dataclass
+# Exceptions
+from .Exceptions import NoGlucoseDataError, DexcomApiNotInitialisedError
 
 # Dexcom Data Object Class
 @dataclass
@@ -27,16 +30,16 @@ class DexcomApi:
     # Exception handling done in Setup.py component
     self._dexcom = Dexcom(self._username, self._password, ous=ous)
     
-  def fetch_glucose_reading(self) -> DexcomData:
+  def fetch_glucose_reading(self) -> DexcomData | None:
     if(not self._dexcom):
-      raise Exception('Dexcom API not initialised.')
+      raise DexcomApiNotInitialisedError()
     
     # Exception handling done in GlucoseFetcher
-    reading = self._dexcom.get_current_glucose_reading()
+    reading = self._dexcom.get_latest_glucose_reading()
     return DexcomData(
       glucose_reading=reading.value, 
       trend=reading.trend
-    )
+    ) if reading else None
 
 # Class initiating periodical fetch loop
 class GlucoseFetcher:
@@ -49,27 +52,48 @@ class GlucoseFetcher:
     self._logger = Logger(LOGGER_PATH)
     
     self._dex_api: Optional[DexcomApi] = None
+
+  def _fetch_and_update(self):
+    reading = self._dex_api.fetch_glucose_reading()
+    if(reading is None):
+      raise NoGlucoseDataError()
+    self._generate_update_event(reading.glucose_reading, reading.trend)
+ 
+  def _handle_fetch_error(self, error_messege: str, retry=False, max_retries = 5) -> None:
+    attempt = 0
+    while(retry and attempt < max_retries):
+      try:
+        time.sleep(50 * (min(2**(attempt+1), 100)))
+        self._fetch_and_update()
+        return # Exit on success
+      except Exception:
+        attempt += 1
+        
+    self._generate_fail_event(error_messege)
     
+    if(retry):
+      self._logger.add_entry(error_messege)
+    else:
+      self._logger.add_entry(f'Failed after {max_retries} retries. {error_messege}')
+  
   def _fetch_loop(self, interval: int) -> None:
     while(not self._stop_event.is_set()):
       try:
-        reading = self._dex_api.fetch_glucose_reading()
-        self._generate_update_event(reading.glucose_reading, reading.trend)
-        
+        self._fetch_and_update()
+      except dexcom_errors.AccountError as e:
+        self._handle_fetch_error(e, f'Authentication Error: {e}', critical=True)
+      except dexcom_errors.SessionError as e:
+        self._handle_fetch_error(e, f'Session Error: {e}', critical=True)
+      except dexcom_errors.ArgumentError as e:
+        self._handle_fetch_error(e, f'Settings Error: {e}')
+      except (requests.exceptions.ConnectionError, requests.exceptions.RetryError) as e:
+        self._handle_fetch_error(e, f'Connection Error: {e}', retry=True)
+      except requests.exceptions.RequestException as e:
+        self._handle_fetch_error(e, f'General HTTP Error: {e}', retry=True)
+      except NoGlucoseDataError as e:
+        self._handle_fetch_error(e, f'Data error: {e}', retry=True)
       except Exception as e:
-        self._generate_fail_event(e)
-        
-        message_title = 'Error'
-        if(isinstance(e,dexcom_errors.AccountError)): message_title = 'Authentication Error'
-        if(isinstance(e,dexcom_errors.SessionError)): message_title = 'Session Error'
-        if(isinstance(e,dexcom_errors.ArgumentError)): message_title = 'Settings Error'
-        if(isinstance(e,requests.exceptions.RequestException)): message_title = 'General HTTP Error'
-        if(
-          isinstance(e,requests.exceptions.ConnectionError) or 
-          isinstance(e,requests.exceptions.RetryError)
-        ): message_title = 'Connection Error'
-        
-        self._logger.add_entry(f'{message_title}: {e}')
+        self._handle_fetch_error(e, 'Unexpected Error')
         
       self._stop_event.wait(interval)
 
@@ -78,7 +102,7 @@ class GlucoseFetcher:
          
   def start_fetch_loop(self) -> None:
     if(self._dex_api is None):
-      raise Exception('DexcomApi not set!')
+      raise DexcomApiNotInitialisedError()
     
     if(not self._thread or not self._thread.is_alive()):
       self._stop_event.clear()
