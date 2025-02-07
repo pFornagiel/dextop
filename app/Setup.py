@@ -167,6 +167,20 @@ class SetupWindow:
     y_coordinate = (screen_height // 2) - (window_height // 2)
     self._root.geometry(f"+{x_coordinate}+{y_coordinate}")
     
+  
+  def _handle_fetcher_initialisation_error(self, error_window_title: str, error_messege: str) -> None:        
+    self._logger.add_entry(entry=error_messege)
+    tk.messagebox.showwarning(title=error_window_title, message=error_messege)
+    self._reset_settings()
+    
+    # The Setup Window is open
+    if(self._root.state == 'normal'):
+      self._password_entry.delete(0,'end')
+      self._password_entry.focus()
+    # Setup Window is withdrawn
+    else:
+      self._root.deiconify()
+  
   def _show_dextop_widget(self, login: str, password: str, is_europe: bool, interval:str, upper_threshold: str, bottom_threshold: str, mmol: bool) -> None:
     try:
       dex_api = DexcomApi(is_europe, login, password)
@@ -178,29 +192,19 @@ class SetupWindow:
       if(self._widget._root.wm_state() != 'normal'):
         self._widget.configure_widget()
         self._widget._root.deiconify()
-        
+
+    except dexcom_errors.AccountError as e:
+      self._handle_fetcher_initialisation_error('Authentication Error', str(e))
+    except dexcom_errors.SessionError as e:
+      self._handle_fetcher_initialisation_error('Session Error', str(e))
+    except dexcom_errors.ArgumentError as e:
+      self._handle_fetcher_initialisation_error('Settings Error', str(e))
+    except (requests.exceptions.ConnectionError, requests.exceptions.RetryError) as e:
+      self._handle_fetcher_initialisation_error('Connection Error', 'Unexpected connection error has occured')
+    except requests.exceptions.RequestException as e:
+      self._handle_fetcher_initialisation_error('HTTP Error', 'Unexpected HTTP error has occured')
     except Exception as e:
-      message_title = 'Error'
-      if(isinstance(e,dexcom_errors.AccountError)): message_title = 'Authentication Error'
-      if(isinstance(e,dexcom_errors.SessionError)): message_title = 'Session Error'
-      if(isinstance(e,dexcom_errors.ArgumentError)): message_title = 'Settings Error'
-      if(isinstance(e,requests.exceptions.RequestException)): message_title = 'General HTTP Error'
-      if(
-        isinstance(e,requests.exceptions.ConnectionError) or 
-        isinstance(e,requests.exceptions.RetryError)
-      ): message_title = 'Connection Error'
-      
-      self._logger.add_entry(entry=f'{message_title}: {e}')
-      tk.messagebox.showwarning(title=message_title, message=f'{str(e)}!')
-      self._reset_settings()
-      
-      # The Setup Window is open
-      if(self._root.state == 'normal'):
-        self._password_entry.delete(0,'end')
-        self._password_entry.focus()
-      # Setup Window is withdrawn
-      else:
-        self._root.deiconify()
+      self._handle_fetcher_initialisation_error('Error', 'Unexpected error has occured')
   
   # Saving and reseting settings
   
@@ -333,7 +337,6 @@ class SetupWindow:
     self._root.destroy()
   
   # Keyring helpers
-  
   def _get_password(self, login) -> str:
     password = None
     if(login): password = keyring.get_password('dextop', login)
