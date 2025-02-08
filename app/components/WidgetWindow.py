@@ -1,22 +1,22 @@
 # GUI
 import tkinter as tk
 import tksvg
-from .SvgTrends import get_trend_arrow_SVG
+from app.util.SvgTrends import get_trend_SVG
 from .Tray import TrayIcon, TrayCallbacks
 # Dexcom Api
-from .DexcomApi import DexcomApi, GlucoseFetcher
+from app.DexcomApi import DexcomClient, GlucoseFetcher
 from pydexcom import DexcomError
 # Clicktrough-hacks - win32
 import win32gui
 import win32con
 # Config
 from configparser import ConfigParser
-from .Consts import *
+from app.Consts import *
 # Typing
 from dataclasses import dataclass
 from typing import Optional
 # Exceptions
-from .Exceptions import GlucoseFetcherNotInitialisedError
+from ..Exceptions import GlucoseFetcherNotInitialisedError
 
 @dataclass
 class Position:
@@ -75,14 +75,14 @@ class Widget:
     
     # Protocols and binds
     self._root.protocol("WM_DELETE_WINDOW", self._on_close)
+    self._root.bind("<ButtonPress-1>", self._on_start_drag)
+    self._root.bind("<ButtonRelease-1>", self._on_stop_drag)
+    self._root.bind("<B1-Motion>", self._on_drag)
     self._root.bind('<<Close>>', self._on_close)
     self._root.bind('<<Update>>', self._on_update)
     self._root.bind('<<Failed>>', self._on_fail)
     self._root.bind('<<Start_Drag>>', self._on_enable_drag)
     self._root.bind('<<Stop_Drag>>', self._on_disable_drag)
-    self._root.bind("<ButtonPress-1>", self._on_start_drag)
-    self._root.bind("<ButtonRelease-1>", self._on_stop_drag)
-    self._root.bind("<B1-Motion>", self._on_drag)
     self._root.bind("<<Resize>>", self._on_resize)
     self._root.bind("<<Settings>>", self._on_open_settings)
 
@@ -111,7 +111,7 @@ class Widget:
     )
     
     # Trend arrow label displaying SVG
-    svg = tksvg.SvgImage(data=get_trend_arrow_SVG(self._trend.get(), colour, svg_size))
+    svg = tksvg.SvgImage(data=get_trend_SVG(self._trend.get(), colour, svg_size))
     
     self._trend_label = tk.Label(
       self._frame1, 
@@ -133,10 +133,10 @@ class Widget:
     
     # Packing
     self._glucose_value_label.pack(side='left')
-    self._trend_label.pack(side='left')
     self._frame1.pack()
     self._unit_label.pack(side='top')
     self._frame2.pack(side='left',anchor='nw')
+    self._trend_label.pack(side='left')
     self._frame_wrapper.pack(expand=True)
     
   # Windows specific click-trough hacks
@@ -170,7 +170,7 @@ class Widget:
     self._glucose_value_label.config(fg=colour)
     self._unit_label.config(fg=colour)
     
-    svg = tksvg.SvgImage(data=get_trend_arrow_SVG(trend,colour,self._size_config.svg))
+    svg = tksvg.SvgImage(data=get_trend_SVG(trend,colour,self._size_config.svg))
     self._trend_label.config(image=svg)
     self._trend_label.image = svg
     
@@ -178,7 +178,7 @@ class Widget:
   
   def _on_fail(self,_) -> None:
     self._glucose_value_label.config(fg=TEXT)
-    svg = tksvg.SvgImage(data=get_trend_arrow_SVG(0,TEXT, self._size_config.svg))
+    svg = tksvg.SvgImage(data=get_trend_SVG(0,TEXT, self._size_config.svg))
     self._trend_label.config(image=svg)
     self._trend_label.image = svg
     
@@ -225,7 +225,7 @@ class Widget:
     self._glucose_value_label.configure(font=('Inter',self._size_config.font_glucose))
     self._unit_label.configure(font=('Inter',self._size_config.font_units))
     
-    svg = tksvg.SvgImage(data=get_trend_arrow_SVG((self._trend.get()),self._get_colour(),self._size_config.svg))
+    svg = tksvg.SvgImage(data=get_trend_SVG((self._trend.get()),self._get_colour(),self._size_config.svg))
     self._trend_label.config(image=svg)
     self._trend_label.image = svg
     
@@ -327,8 +327,8 @@ class Widget:
     )
     self._update_widget()
     
-  def set_glucose_fetcher(self, dex_api: DexcomApi) -> None:
-    self._glucose_fetcher.setDexcomApi(dex_api)
+  def set_glucose_fetcher(self, dexcom_client: DexcomClient) -> None:
+    self._glucose_fetcher.setDexcomApi(dexcom_client)
       
   def start_glucose_fetching(self) -> None:
     if(self._glucose_fetcher is None):

@@ -2,13 +2,11 @@
 import pystray
 # Image manipulation
 from PIL import Image
+# Config
+from app.Consts import TRAY_IMAGE_PATH
 # Typing 
 from typing import Callable, Literal
 from dataclasses import dataclass
-
-
-def create_image() -> Image:
-  return Image.open('./assets/dextop_icon.png')  # Replace with your image file path
   
 @dataclass
 class TrayCallbacks:
@@ -26,7 +24,11 @@ class TrayIcon:
     self._draggable = False
     self._size = size
     
-    self._tray = pystray.Icon('Dextop', icon=create_image(), menu=self._initialise_menu())
+    self._tray = pystray.Icon('Dextop', icon=TrayIcon._create_tray_image(), menu=self._initialise_menu())
+  
+  @staticmethod
+  def _create_tray_image():
+    return Image.open(TRAY_IMAGE_PATH)
     
   def _initialise_menu(self) -> pystray.Menu:
     return pystray.Menu(

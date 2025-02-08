@@ -3,16 +3,16 @@ from pydexcom import Dexcom
 from pydexcom import errors as dexcom_errors
 # Utils
 import threading
-from .Logger import Logger
+from .util.Logger import Logger
 import requests
 import time
 # Config
-from .Consts import LOGGER_PATH
+from app.Consts import LOGGER_PATH
 # Typing
 from typing import Callable, Optional
 from dataclasses import dataclass
 # Exceptions
-from .Exceptions import NoGlucoseDataError, DexcomApiNotInitialisedError
+from app.Exceptions import NoGlucoseDataError, DexcomApiNotInitialisedError
 
 # Dexcom Data Object Class
 @dataclass
@@ -21,7 +21,7 @@ class DexcomData:
     trend: str
     
 # Class providing connection to Dexcom Share API
-class DexcomApi:
+class DexcomClient:
   def __init__(self, ous:bool, username: str, password: str) -> None:
     self._username = username
     self._password = password
@@ -51,7 +51,7 @@ class GlucoseFetcher:
     self._thread: Optional[threading.Thread] = None
     self._logger = Logger(LOGGER_PATH)
     
-    self._dex_api: Optional[DexcomApi] = None
+    self._dex_api: Optional[DexcomClient] = None
 
   def _fetch_and_update(self):
     reading = self._dex_api.fetch_glucose_reading()
@@ -97,7 +97,7 @@ class GlucoseFetcher:
         
       self._stop_event.wait(interval)
 
-  def setDexcomApi(self, dex_api: DexcomApi) -> None:
+  def setDexcomApi(self, dex_api: DexcomClient) -> None:
     self._dex_api = dex_api
          
   def start_fetch_loop(self) -> None:

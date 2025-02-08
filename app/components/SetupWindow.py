@@ -1,16 +1,16 @@
 # GUI
 import tkinter as tk
 import tkinter.messagebox
-from .Widget import Widget
+from .WidgetWindow import Widget
 # Dexcom Api
-from .DexcomApi import DexcomApi
+from app.DexcomApi import DexcomClient
 from pydexcom import errors as dexcom_errors
 # Config
 from configparser import ConfigParser
-from .Consts import *
+from app.Consts import *
 # Utils
 import keyring
-from .Logger import Logger
+from app.util.Logger import Logger
 import requests
 # Image manipulation
 from PIL import Image, ImageTk
@@ -183,8 +183,8 @@ class SetupWindow:
   
   def _show_dextop_widget(self, login: str, password: str, is_europe: bool, interval:str, upper_threshold: str, bottom_threshold: str, mmol: bool) -> None:
     try:
-      dex_api = DexcomApi(is_europe, login, password)
-      self._widget.set_glucose_fetcher(dex_api)
+      dexcom_client = DexcomClient(is_europe, login, password)
+      self._widget.set_glucose_fetcher(dexcom_client)
       self._save_settings(login,password,is_europe,interval, upper_threshold, bottom_threshold, mmol)
       # Hide setup window and create the widget
       if(self._root.wm_state() == 'normal'):

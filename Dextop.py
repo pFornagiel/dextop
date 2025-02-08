@@ -1,3 +1,3 @@
-from app.Setup import SetupWindow
+from app.components.SetupWindow import SetupWindow
 
 SetupWindow()
