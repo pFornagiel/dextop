@@ -2,7 +2,6 @@
 .venv
 *.pyc
 *.pyo
-svg
 errors.png
 run_2.py
 app/settings.ini
@@ -11,3 +10,5 @@ run.build/*
 run.dist/*
 Dextop.build/*
 Dextop.dist/*
+dextop.bat
+dev_svg
