@@ -7,7 +7,7 @@ from .util.Logger import Logger
 import requests
 import time
 # Config
-from app.Consts import LOGGER_PATH
+from app.Consts import LOGGER_PATH, ERROR_LOGGER_NAME
 # Typing
 from typing import Callable, Optional
 from dataclasses import dataclass
@@ -49,12 +49,12 @@ class GlucoseFetcher:
     self._generate_update_event = generate_update_event
     self._stop_event = threading.Event()
     self._thread: Optional[threading.Thread] = None
-    self._logger = Logger(LOGGER_PATH)
+    self._logger = Logger(LOGGER_PATH, ERROR_LOGGER_NAME)
     
-    self._dex_api: Optional[DexcomClient] = None
+    self._dexcom_client: Optional[DexcomClient] = None
 
   def _fetch_and_update(self):
-    reading = self._dex_api.fetch_glucose_reading()
+    reading = self._dexcom_client.fetch_glucose_reading()
     if(reading is None):
       raise NoGlucoseDataError()
     self._generate_update_event(reading.glucose_reading, reading.trend)
@@ -72,9 +72,9 @@ class GlucoseFetcher:
     self._generate_fail_event(error_messege)
     
     if(retry):
-      self._logger.add_entry(error_messege)
+      self._logger.add_entry(error_messege, level='ERROR')
     else:
-      self._logger.add_entry(f'Failed after {max_retries} retries. {error_messege}')
+      self._logger.add_entry(f'Failed after {max_retries} retries. {error_messege}', level='ERROR')
   
   def _fetch_loop(self, interval: int) -> None:
     while(not self._stop_event.is_set()):
@@ -97,11 +97,11 @@ class GlucoseFetcher:
         
       self._stop_event.wait(interval)
 
-  def setDexcomApi(self, dex_api: DexcomClient) -> None:
-    self._dex_api = dex_api
+  def setDexcomApi(self, dexcom_client: DexcomClient) -> None:
+    self._dexcom_client = dexcom_client
          
   def start_fetch_loop(self) -> None:
-    if(self._dex_api is None):
+    if(self._dexcom_client is None):
       raise DexcomApiNotInitialisedError()
     
     if(not self._thread or not self._thread.is_alive()):

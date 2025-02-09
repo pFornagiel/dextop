@@ -73,3 +73,6 @@ SETTINGS_PATH = os.path.join(appdata_path, 'dextop', 'settings.ini')
 LOGGER_PATH = os.path.join(appdata_path, 'dextop', 'logs')
 TRAY_IMAGE_PATH = os.path.join('assets','dextop_icon.png')
 TREND_SVG_PATH = os.path.join('assets', 'svg')
+
+# LOGGER
+ERROR_LOGGER_NAME = "error_logger"

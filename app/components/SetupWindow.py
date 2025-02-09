@@ -7,7 +7,7 @@ from app.DexcomApi import DexcomClient
 from pydexcom import errors as dexcom_errors
 # Config
 from configparser import ConfigParser
-from app.Consts import *
+from app.Consts import LOGGER_PATH, ERROR_LOGGER_NAME, SETTINGS_PATH, DEFAULT_SETTINGS, MMOL_FACTOR
 # Utils
 import keyring
 from app.util.Logger import Logger
@@ -19,7 +19,7 @@ from PIL import Image, ImageTk
 class SetupWindow:
   def __init__(self) -> None:
     self._root = tk.Tk()
-    self._logger = Logger(LOGGER_PATH)
+    self._logger = Logger(LOGGER_PATH, ERROR_LOGGER_NAME)
     self._initialise_settings()
     self._widget = Widget(self._root, self._config)
     self._initialize_window()
@@ -41,26 +41,25 @@ class SetupWindow:
         
         # OPTION SPECIFIC ERROR CHECKS
         reset_to_default = False
-        if(key in ('x', 'y', 'upper_threshold', 'bottom_threshold')):
-          # EAFP
-          try:
-            float(self._config[section][key])
-          except ValueError:
-            reset_to_default = True
-        
-        if(key == 'interval'):
-          if(not self._config[section][key].isdigit()):
-            reset_to_default = True
-            
-        if(key == 'size'):
-          if(self._config[section][key] not in ('NORMAL', 'LARGE')):
-            reset_to_default = True
-            
-        if(key in ('europe', 'mmol')):
-          if(self._config[section][key] not in ('True', 'False')):
-            reset_to_default = True
-              
-        if(reset_to_default): self._config.set(section,key,value)
+        match key:
+          case 'x' | 'y' | 'upper_threshold' | 'bottom_threshold':
+            # EAFP
+            try:
+              float(self._config[section][key])
+            except ValueError:
+              reset_to_default = True
+          case 'interval':
+            if(not self._config[section][key].isdigit()):
+              reset_to_default = True
+          case 'size':
+            if(self._config[section][key] not in ('NORMAL', 'LARGE')):
+              reset_to_default = True          
+          case 'europe' | 'mmol':
+            if(self._config[section][key] not in ('True', 'False')):
+              reset_to_default = True
+                
+        if(reset_to_default): 
+          self._config.set(section,key,value)
           
     with open(SETTINGS_PATH, 'w') as config_file:
       self._config.write(config_file)
@@ -169,7 +168,7 @@ class SetupWindow:
     
   
   def _handle_fetcher_initialisation_error(self, error_window_title: str, error_messege: str) -> None:        
-    self._logger.add_entry(entry=error_messege)
+    self._logger.add_entry(entry=error_messege, level='ERROR')
     tk.messagebox.showwarning(title=error_window_title, message=error_messege)
     self._reset_settings()
     

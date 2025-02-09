@@ -16,7 +16,7 @@ from app.Consts import *
 from dataclasses import dataclass
 from typing import Optional
 # Exceptions
-from ..Exceptions import GlucoseFetcherNotInitialisedError
+from app.Exceptions import GlucoseFetcherNotInitialisedError
 
 @dataclass
 class Position:
