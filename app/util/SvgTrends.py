@@ -10,7 +10,6 @@ def load_svgs():
   for i in range(len(os.listdir(TREND_SVG_PATH))):
     with open(os.path.join(TREND_SVG_PATH, f'trend_{i}.svg'), 'r') as file:
       TREND_LIST.append(file.read())
-      
 
 def get_trend_SVG(number: int, colour: str, size: int) -> str:
   if number == 0:
