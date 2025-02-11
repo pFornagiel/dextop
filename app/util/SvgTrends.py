@@ -1,14 +1,14 @@
 # Util
 import os
 # Config
-from app.Consts import TREND_SVG_PATH
+from app.Config import Paths
 
 TREND_LIST: list[str] = []
 
 def load_svgs():
   global TREND_LIST
-  for i in range(len(os.listdir(TREND_SVG_PATH))):
-    with open(os.path.join(TREND_SVG_PATH, f'trend_{i}.svg'), 'r') as file:
+  for i in range(len(os.listdir(Paths.TREND_SVG_PATH))):
+    with open(os.path.join(Paths.TREND_SVG_PATH, f'trend_{i}.svg'), 'r') as file:
       TREND_LIST.append(file.read())
 
 def get_trend_SVG(number: int, colour: str, size: int) -> str:

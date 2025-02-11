@@ -7,7 +7,7 @@ from .util.Logger import Logger
 import requests
 import time
 # Config
-from app.Consts import LOGGER_PATH, ERROR_LOGGER_NAME
+from app.Config import Paths, ERROR_LOGGER_NAME
 # Typing
 from typing import Callable, Optional
 from dataclasses import dataclass
@@ -49,7 +49,7 @@ class GlucoseFetcher:
     self._generate_update_event = generate_update_event
     self._stop_event = threading.Event()
     self._thread: Optional[threading.Thread] = None
-    self._logger = Logger(LOGGER_PATH, ERROR_LOGGER_NAME)
+    self._logger = Logger(Paths.LOGGER_PATH, ERROR_LOGGER_NAME)
     
     self._dexcom_client: Optional[DexcomClient] = None
 

@@ -7,7 +7,7 @@ from app.DexcomApi import DexcomClient
 from pydexcom import errors as dexcom_errors
 # Config
 from configparser import ConfigParser
-from app.Consts import LOGGER_PATH, ERROR_LOGGER_NAME, SETTINGS_PATH, DEFAULT_SETTINGS, MMOL_FACTOR
+from app.Config import DefaultSettings, Paths, ERROR_LOGGER_NAME, MMOL_FACTOR
 # Utils
 import keyring
 from app.util.Logger import Logger
@@ -19,7 +19,7 @@ from PIL import Image, ImageTk
 class SetupWindow:
   def __init__(self) -> None:
     self._root = tk.Tk()
-    self._logger = Logger(LOGGER_PATH, ERROR_LOGGER_NAME)
+    self._logger = Logger(Paths.LOGGER_PATH, ERROR_LOGGER_NAME)
     self._initialise_settings()
     self._widget = Widget(self._root, self._config)
     self._initialize_window()
@@ -30,40 +30,9 @@ class SetupWindow:
   
   def _initialise_settings(self) -> None:
     self._config = ConfigParser()
-    self._config.read(SETTINGS_PATH)
+    self._config.read(Paths.SETTINGS_PATH)
+    DefaultSettings.initialise_settings(self._config)
     
-    for section, keys in DEFAULT_SETTINGS.items():
-      if section not in self._config:
-        self._config.add_section(section)
-      for key, value in keys.items():
-        if not self._config.has_option(section, key) or not self._config[section][key]:
-          self._config[section][key] = value
-        
-        # OPTION SPECIFIC ERROR CHECKS
-        reset_to_default = False
-        match key:
-          case 'x' | 'y' | 'upper_threshold' | 'bottom_threshold':
-            # EAFP
-            try:
-              float(self._config[section][key])
-            except ValueError:
-              reset_to_default = True
-          case 'interval':
-            if(not self._config[section][key].isdigit()):
-              reset_to_default = True
-          case 'size':
-            if(self._config[section][key] not in ('NORMAL', 'LARGE')):
-              reset_to_default = True          
-          case 'europe' | 'mmol':
-            if(self._config[section][key] not in ('True', 'False')):
-              reset_to_default = True
-                
-        if(reset_to_default): 
-          self._config.set(section,key,value)
-          
-    with open(SETTINGS_PATH, 'w') as config_file:
-      self._config.write(config_file)
-
   def _initialize_window(self) -> None:
     self._root.title("Settings")
     self._root.resizable(False,False)
@@ -215,19 +184,20 @@ class SetupWindow:
     self._config['settings']['mmol'] = str(mmol)
     self._config['credentials']['login'] = login
 
-    with open(SETTINGS_PATH, 'w') as configfile:
+    with open(Paths.SETTINGS_PATH, 'w') as configfile:
       self._config.write(configfile)
       
     # Store the password using keyring instead of plain text for security
     self._set_password(login,password)
   
   def _reset_settings(self) -> None:
-    self._config['settings']['interval'] = DEFAULT_SETTINGS['settings']['interval']
-    self._config['settings']['europe'] = DEFAULT_SETTINGS['settings']['europe']
-    self._config['settings']['upper_threshold'] = DEFAULT_SETTINGS['settings']['upper_threshold']
-    self._config['settings']['bottom_threshold'] = DEFAULT_SETTINGS['settings']['bottom_threshold']
-    self._config['credentials']['login'] = DEFAULT_SETTINGS['credentials']['login']
-    with open(SETTINGS_PATH, 'w') as configfile:
+    default_settings = DefaultSettings.get_settings()
+    self._config['settings']['interval'] = default_settings['settings']['interval']
+    self._config['settings']['europe'] = default_settings['settings']['europe']
+    self._config['settings']['upper_threshold'] = default_settings['settings']['upper_threshold']
+    self._config['settings']['bottom_threshold'] = default_settings['settings']['bottom_threshold']
+    self._config['credentials']['login'] = default_settings['credentials']['login']
+    with open(Paths.SETTINGS_PATH, 'w') as configfile:
       self._config.write(configfile)
   
   # Helper methods

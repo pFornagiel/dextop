@@ -3,7 +3,7 @@ import pystray
 # Image manipulation
 from PIL import Image
 # Config
-from app.Consts import TRAY_IMAGE_PATH
+from app.Config import Size, Paths
 # Typing 
 from typing import Callable, Literal
 from dataclasses import dataclass
@@ -19,7 +19,7 @@ class TrayCallbacks:
 
 # Class for managing the tray icon
 class TrayIcon:
-  def __init__(self, callbacks: TrayCallbacks, size: Literal['LARGE', 'NORMAL']) -> None:
+  def __init__(self, callbacks: TrayCallbacks, size: Literal[Size.LARGE, Size.NORMAL]) -> None:
     self._callbacks = callbacks
     self._draggable = False
     self._size = size
@@ -28,7 +28,7 @@ class TrayIcon:
   
   @staticmethod
   def _create_tray_image():
-    return Image.open(TRAY_IMAGE_PATH)
+    return Image.open(Paths.TRAY_IMAGE_PATH)
     
   def _initialise_menu(self) -> pystray.Menu:
     return pystray.Menu(
@@ -37,13 +37,13 @@ class TrayIcon:
         pystray.Menu(
           pystray.MenuItem(
             'Normal',
-            lambda: self._on_resize('NORMAL'),
-            checked = lambda _: self._size == 'NORMAL'
+            lambda: self._on_resize(Size.NORMAL),
+            checked = lambda _: self._size == Size.NORMAL
           ),
           pystray.MenuItem(
             'Large',
-            lambda: self._on_resize('LARGE'),
-            checked = lambda _: self._size == 'LARGE'
+            lambda: self._on_resize(Size.LARGE),
+            checked = lambda _: self._size == Size.LARGE
           )
         )
       ),

@@ -9,7 +9,6 @@ MAX_BYTES = 5_000_000
 class Logger:
   _instance = None
 
-  @classmethod
   def __new__(cls, path: str, logger_name: str):
     if(cls._instance is None):
       cls._instance = super(Logger, cls).__new__(cls)
