@@ -19,8 +19,8 @@ from PIL import Image, ImageTk
 class SetupWindow:
   def __init__(self) -> None:
     self._root = tk.Tk()
-    self._logger = Logger(Paths.LOGGER_PATH, ERROR_LOGGER_NAME)
     self._initialise_settings()
+    self._logger = Logger(Paths.LOGGER_PATH, ERROR_LOGGER_NAME)
     self._widget = Widget(self._root, self._config)
     self._initialize_window()
 

@@ -7,12 +7,11 @@ from dataclasses import dataclass
 from typing import Tuple, Literal
 from enum import Enum
 
-# ===== ENUMS =====
+# ===== SIZING =====
 class Size(str, Enum):
   NORMAL = "NORMAL"
   LARGE = "LARGE"
 
-# ===== SIZING =====
 @dataclass
 class Sizing:
   size: Literal['NORMAL', 'LARGE']
@@ -102,14 +101,14 @@ class DefaultSettings:
       config_parser.write(config_file)
 
 # ===== COLOURS =====
-class Colours:
+class Colours(str, Enum):
   WARNING_BOTTOM_COLOUR = 'red'
   WARNING_UPPER_COLOUR = '#ffce1f'
   TEXT_COLOUR = 'white'
   BACKGROUND_COLOUR = '#292929'
   
 # ===== FILE PATHS =====
-class Paths:
+class Paths(str, Enum):
   _appdata_path = os.getenv('APPDATA')
   SETTINGS_PATH = os.path.join(_appdata_path, 'dextop', 'settings.ini')
   LOGGER_PATH = os.path.join(_appdata_path, 'dextop', 'logs')
