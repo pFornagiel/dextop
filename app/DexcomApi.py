@@ -63,12 +63,12 @@ class GlucoseFetcher:
     attempt = 0
     while(retry and attempt < max_retries):
       try:
-        time.sleep(50 * (min(2**(attempt+1), 100)))
+        time.sleep(0.05 * (min(2**(attempt+1), 100)))
         self._fetch_and_update()
         return # Exit on success
       except Exception:
         attempt += 1
-        
+    
     self._generate_fail_event(error_messege)
     
     if(retry):
