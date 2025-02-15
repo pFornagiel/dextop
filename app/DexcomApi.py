@@ -35,7 +35,8 @@ class DexcomClient:
       raise DexcomApiNotInitialisedError()
     
     # Exception handling done in GlucoseFetcher
-    reading = self._dexcom.get_latest_glucose_reading()
+    _reading = self._dexcom.get_glucose_readings(15,1)
+    reading = _reading[0] if _reading else None
     return DexcomData(
       glucose_reading=reading.value, 
       trend=reading.trend
