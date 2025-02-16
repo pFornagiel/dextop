@@ -1,25 +1,25 @@
 # GUI
 import tkinter as tk
 import tksvg
-from .SvgTrends import get_trend_arrow_SVG
+from app.util.SvgTrends import get_trend_SVG
 from .Tray import TrayIcon, TrayCallbacks
 # Dexcom Api
-from .DexcomApi import DexcomApi, GlucoseFetcher
+from app.DexcomApi import DexcomClient, GlucoseFetcher
 from pydexcom import DexcomError
 # Clicktrough-hacks - win32
 import win32gui
 import win32con
 # Config
 from configparser import ConfigParser
-from .Consts import *
+from app.Config import Colours, Paths, DefaultSettings, Sizing, SizeConfig, TASKBAR_OFFSET
 # Typing
 from dataclasses import dataclass
 from typing import Optional
 # Exceptions
-from .Exceptions import GlucoseFetcherNotInitialisedError
+from app.Exceptions import GlucoseFetcherNotInitialisedError
 
 @dataclass
-class Position:
+class PositionSection:
   x: int
   y: int
 
@@ -35,15 +35,16 @@ class Widget:
     self._initialise_tray()
   
   def _initialise_settings(self) -> None:
-    self._size_config: Sizing = SIZE[DEFAULT_SETTINGS['settings']['size']]
-    self._interval: int = int(DEFAULT_SETTINGS['settings']['interval'])
-    self._upper_threshold: float = float(DEFAULT_SETTINGS['settings']['upper_threshold'])
-    self._bottom_threshold: float = float(DEFAULT_SETTINGS['settings']['bottom_threshold'])
-    self._mmol: bool = DEFAULT_SETTINGS['settings']['mmol'] == 'True'
+    default_settings = DefaultSettings.get_settings()
+    self._size_config: Sizing = SizeConfig.get_size(default_settings['settings']['size'])
+    self._interval: int = int(default_settings['settings']['interval'])
+    self._upper_threshold: float = float(default_settings['settings']['upper_threshold'])
+    self._bottom_threshold: float = float(default_settings['settings']['bottom_threshold'])
+    self._mmol: bool = default_settings['settings']['mmol'] == 'True'
     self._moveable: bool = False
-    self._position: Position = Position(
-      x = DEFAULT_SETTINGS['position']['x'],
-      y = DEFAULT_SETTINGS['position']['y']
+    self._position: PositionSection = PositionSection(
+      x = default_settings['position']['x'],
+      y = default_settings['position']['y']
     )
   
   def _initialise_GUI_value_display(self) -> None:
@@ -68,21 +69,21 @@ class Widget:
   def _initialise_widget(self) -> None:
     '''initialise widget's attributes'''
     self._root.title("Dextop")
-    self._root.configure(background=BACKGROUND)
+    self._root.configure(background=Colours.BACKGROUND_COLOUR)
     self._root.attributes('-alpha',0.7,"-topmost", True)
     self._root.overrideredirect(True)
     self._enable_clicktrough(init=True)
     
     # Protocols and binds
     self._root.protocol("WM_DELETE_WINDOW", self._on_close)
+    self._root.bind("<ButtonPress-1>", self._on_start_drag)
+    self._root.bind("<ButtonRelease-1>", self._on_stop_drag)
+    self._root.bind("<B1-Motion>", self._on_drag)
     self._root.bind('<<Close>>', self._on_close)
     self._root.bind('<<Update>>', self._on_update)
     self._root.bind('<<Failed>>', self._on_fail)
     self._root.bind('<<Start_Drag>>', self._on_enable_drag)
     self._root.bind('<<Stop_Drag>>', self._on_disable_drag)
-    self._root.bind("<ButtonPress-1>", self._on_start_drag)
-    self._root.bind("<ButtonRelease-1>", self._on_stop_drag)
-    self._root.bind("<B1-Motion>", self._on_drag)
     self._root.bind("<<Resize>>", self._on_resize)
     self._root.bind("<<Settings>>", self._on_open_settings)
 
@@ -96,9 +97,9 @@ class Widget:
     glucose_size, unit_size, svg_size = self._size_config.font_glucose, self._size_config.font_units, self._size_config.svg
     
     # Frames
-    self._frame_wrapper = tk.Frame(self._root, background=BACKGROUND)
-    self._frame1 = tk.Frame(self._frame_wrapper, background=BACKGROUND)
-    self._frame2 = tk.Frame(self._frame_wrapper, background=BACKGROUND)
+    self._frame_wrapper = tk.Frame(self._root, background=Colours.BACKGROUND_COLOUR)
+    self._frame1 = tk.Frame(self._frame_wrapper, background=Colours.BACKGROUND_COLOUR)
+    self._frame2 = tk.Frame(self._frame_wrapper, background=Colours.BACKGROUND_COLOUR)
     
     # Glucose value label
     self._glucose_value_label = tk.Label(
@@ -107,16 +108,16 @@ class Widget:
       padx=10, 
       font=('Inter',glucose_size),
       fg=colour,
-      background=BACKGROUND
+      background=Colours.BACKGROUND_COLOUR
     )
     
     # Trend arrow label displaying SVG
-    svg = tksvg.SvgImage(data=get_trend_arrow_SVG(self._trend.get(), colour, svg_size))
+    svg = tksvg.SvgImage(data=get_trend_SVG(self._trend.get(), colour, svg_size))
     
     self._trend_label = tk.Label(
       self._frame1, 
       image=svg, 
-      background=BACKGROUND,
+      background=Colours.BACKGROUND_COLOUR,
       padx=10, 
       )
     # Has to be done, in order for the image to display correctly
@@ -129,14 +130,14 @@ class Widget:
       padx=15, 
       font=('Inter',unit_size),
       fg=colour,
-      background=BACKGROUND)
+      background=Colours.BACKGROUND_COLOUR)
     
     # Packing
     self._glucose_value_label.pack(side='left')
-    self._trend_label.pack(side='left')
     self._frame1.pack()
     self._unit_label.pack(side='top')
     self._frame2.pack(side='left',anchor='nw')
+    self._trend_label.pack(side='left')
     self._frame_wrapper.pack(expand=True)
     
   # Windows specific click-trough hacks
@@ -170,15 +171,15 @@ class Widget:
     self._glucose_value_label.config(fg=colour)
     self._unit_label.config(fg=colour)
     
-    svg = tksvg.SvgImage(data=get_trend_arrow_SVG(trend,colour,self._size_config.svg))
+    svg = tksvg.SvgImage(data=get_trend_SVG(trend,colour,self._size_config.svg))
     self._trend_label.config(image=svg)
     self._trend_label.image = svg
     
     # self._root.update_idletasks()
   
   def _on_fail(self,_) -> None:
-    self._glucose_value_label.config(fg=TEXT)
-    svg = tksvg.SvgImage(data=get_trend_arrow_SVG(0,TEXT, self._size_config.svg))
+    self._glucose_value_label.config(fg=Colours.TEXT_COLOUR)
+    svg = tksvg.SvgImage(data=get_trend_SVG(0,Colours.TEXT_COLOUR, self._size_config.svg))
     self._trend_label.config(image=svg)
     self._trend_label.image = svg
     
@@ -204,7 +205,7 @@ class Widget:
         'x': str(self._position.x),
         'y': str(self._position.y)
       }
-      with open(SETTINGS_PATH, 'w') as configfile:
+      with open(Paths.SETTINGS_PATH, 'w') as configfile:
         self._config.write(configfile)
       
       self._root.x = None
@@ -225,12 +226,12 @@ class Widget:
     self._glucose_value_label.configure(font=('Inter',self._size_config.font_glucose))
     self._unit_label.configure(font=('Inter',self._size_config.font_units))
     
-    svg = tksvg.SvgImage(data=get_trend_arrow_SVG((self._trend.get()),self._get_colour(),self._size_config.svg))
+    svg = tksvg.SvgImage(data=get_trend_SVG((self._trend.get()),self._get_colour(),self._size_config.svg))
     self._trend_label.config(image=svg)
     self._trend_label.image = svg
     
     self._config['settings']['size'] = self._size_config.size
-    with open(SETTINGS_PATH, 'w') as config_file:
+    with open(Paths.SETTINGS_PATH, 'w') as config_file:
       self._config.write(config_file)
       
   def _on_open_settings(self, _) -> None:
@@ -261,7 +262,7 @@ class Widget:
     self._root.event_generate('<<Stop_Drag>>', when='now')
   
   def _generate_resize_event(self, size) -> None:
-    self._size_config = SIZE[size]
+    self._size_config = SizeConfig.get_size(size)
     self._root.event_generate('<<Resize>>', when='now')
     
   def _generate_open_settings_event(self) -> None:
@@ -280,16 +281,16 @@ class Widget:
       'y': self._position.y
     }
     
-    with open(SETTINGS_PATH, 'w') as configfile:
+    with open(Paths.SETTINGS_PATH, 'w') as configfile:
       self._config.write(configfile)
       
   def _get_colour(self) -> str:
     glucose_value = self._glucose_value.get()
-    colour = TEXT
+    colour = Colours.TEXT_COLOUR
     if(glucose_value not in ('---', '') and float(glucose_value) <= self._bottom_threshold):
-      colour = WARNING_BOTTOM
+      colour = Colours.WARNING_BOTTOM_COLOUR
     if(glucose_value not in ('---', '')and float(glucose_value) >= self._upper_threshold):
-      colour = WARNING_UPPER
+      colour = Colours.WARNING_UPPER_COLOUR
     return colour
 
   def _update_widget(self) -> None:
@@ -313,7 +314,7 @@ class Widget:
   # Public methods
   
   def read_settings(self) -> None:
-    self._size_config: Sizing = SIZE[self._config['settings']['size']]
+    self._size_config: Sizing = SizeConfig.get_size(self._config['settings']['size'])
     self._tray_icon.set_size(self._config['settings']['size'])
     self._interval: int = int(self._config['settings']['interval'])
     self._upper_threshold: float = float(self._config['settings']['upper_threshold'])
@@ -321,14 +322,14 @@ class Widget:
     self._mmol: bool = self._config['settings'].getboolean('mmol')
     
     self._moveable: bool = False
-    self._position: Position = Position(
+    self._position: PositionSection = PositionSection(
       x = self._config['position']['x'],
       y = self._config['position']['y']
     )
     self._update_widget()
     
-  def set_glucose_fetcher(self, dex_api: DexcomApi) -> None:
-    self._glucose_fetcher.setDexcomApi(dex_api)
+  def set_glucose_fetcher(self, dexcom_client: DexcomClient) -> None:
+    self._glucose_fetcher.setDexcomApi(dexcom_client)
       
   def start_glucose_fetching(self) -> None:
     if(self._glucose_fetcher is None):

@@ -1,16 +1,16 @@
 # GUI
 import tkinter as tk
 import tkinter.messagebox
-from .Widget import Widget
+from .WidgetWindow import Widget
 # Dexcom Api
-from .DexcomApi import DexcomApi
+from app.DexcomApi import DexcomClient
 from pydexcom import errors as dexcom_errors
 # Config
 from configparser import ConfigParser
-from .Consts import *
+from app.Config import DefaultSettings, Paths, ERROR_LOGGER_NAME, MMOL_FACTOR
 # Utils
 import keyring
-from .Logger import Logger
+from app.util.Logger import Logger
 import requests
 # Image manipulation
 from PIL import Image, ImageTk
@@ -19,8 +19,8 @@ from PIL import Image, ImageTk
 class SetupWindow:
   def __init__(self) -> None:
     self._root = tk.Tk()
-    self._logger = Logger(LOGGER_PATH)
     self._initialise_settings()
+    self._logger = Logger(Paths.LOGGER_PATH, ERROR_LOGGER_NAME)
     self._widget = Widget(self._root, self._config)
     self._initialize_window()
 
@@ -30,41 +30,9 @@ class SetupWindow:
   
   def _initialise_settings(self) -> None:
     self._config = ConfigParser()
-    self._config.read(SETTINGS_PATH)
+    self._config.read(Paths.SETTINGS_PATH)
+    DefaultSettings.initialise_settings(self._config)
     
-    for section, keys in DEFAULT_SETTINGS.items():
-      if section not in self._config:
-        self._config.add_section(section)
-      for key, value in keys.items():
-        if not self._config.has_option(section, key) or not self._config[section][key]:
-          self._config[section][key] = value
-        
-        # OPTION SPECIFIC ERROR CHECKS
-        reset_to_default = False
-        if(key in ('x', 'y', 'upper_threshold', 'bottom_threshold')):
-          # EAFP
-          try:
-            float(self._config[section][key])
-          except ValueError:
-            reset_to_default = True
-        
-        if(key == 'interval'):
-          if(not self._config[section][key].isdigit()):
-            reset_to_default = True
-            
-        if(key == 'size'):
-          if(self._config[section][key] not in ('NORMAL', 'LARGE')):
-            reset_to_default = True
-            
-        if(key in ('europe', 'mmol')):
-          if(self._config[section][key] not in ('True', 'False')):
-            reset_to_default = True
-              
-        if(reset_to_default): self._config.set(section,key,value)
-          
-    with open(SETTINGS_PATH, 'w') as config_file:
-      self._config.write(config_file)
-
   def _initialize_window(self) -> None:
     self._root.title("Settings")
     self._root.resizable(False,False)
@@ -169,7 +137,7 @@ class SetupWindow:
     
   
   def _handle_fetcher_initialisation_error(self, error_window_title: str, error_messege: str) -> None:        
-    self._logger.add_entry(entry=error_messege)
+    self._logger.add_entry(entry=error_messege, level='ERROR')
     tk.messagebox.showwarning(title=error_window_title, message=error_messege)
     self._reset_settings()
     
@@ -183,8 +151,8 @@ class SetupWindow:
   
   def _show_dextop_widget(self, login: str, password: str, is_europe: bool, interval:str, upper_threshold: str, bottom_threshold: str, mmol: bool) -> None:
     try:
-      dex_api = DexcomApi(is_europe, login, password)
-      self._widget.set_glucose_fetcher(dex_api)
+      dexcom_client = DexcomClient(is_europe, login, password)
+      self._widget.set_glucose_fetcher(dexcom_client)
       self._save_settings(login,password,is_europe,interval, upper_threshold, bottom_threshold, mmol)
       # Hide setup window and create the widget
       if(self._root.wm_state() == 'normal'):
@@ -216,19 +184,20 @@ class SetupWindow:
     self._config['settings']['mmol'] = str(mmol)
     self._config['credentials']['login'] = login
 
-    with open(SETTINGS_PATH, 'w') as configfile:
+    with open(Paths.SETTINGS_PATH, 'w') as configfile:
       self._config.write(configfile)
       
     # Store the password using keyring instead of plain text for security
     self._set_password(login,password)
   
   def _reset_settings(self) -> None:
-    self._config['settings']['interval'] = DEFAULT_SETTINGS['settings']['interval']
-    self._config['settings']['europe'] = DEFAULT_SETTINGS['settings']['europe']
-    self._config['settings']['upper_threshold'] = DEFAULT_SETTINGS['settings']['upper_threshold']
-    self._config['settings']['bottom_threshold'] = DEFAULT_SETTINGS['settings']['bottom_threshold']
-    self._config['credentials']['login'] = DEFAULT_SETTINGS['credentials']['login']
-    with open(SETTINGS_PATH, 'w') as configfile:
+    default_settings = DefaultSettings.get_settings()
+    self._config['settings']['interval'] = default_settings['settings']['interval']
+    self._config['settings']['europe'] = default_settings['settings']['europe']
+    self._config['settings']['upper_threshold'] = default_settings['settings']['upper_threshold']
+    self._config['settings']['bottom_threshold'] = default_settings['settings']['bottom_threshold']
+    self._config['credentials']['login'] = default_settings['credentials']['login']
+    with open(Paths.SETTINGS_PATH, 'w') as configfile:
       self._config.write(configfile)
   
   # Helper methods

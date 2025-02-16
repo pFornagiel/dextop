@@ -13,7 +13,8 @@ py -X utf8 -m nuitka ^
     --windows-console-mode=disable ^
     Dextop.py
 
-@REM Copy libtksvg.dll manually. Cannot get it working with Nuitka configuration.
+@REM Copy libtksvg.dll and launch_startup.ps1 manually.
 xcopy %CURRENT_DIR%\.venv\Lib\site-packages\tksvg\libtksvg.dll Dextop.dist\tksvg\ /Y
+xcopy %CURRENT_DIR%\scripts\launch_startup.ps1 Dextop.dist /Y
 
 pause
