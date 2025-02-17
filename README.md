@@ -16,7 +16,7 @@ The app is a personal project, which was motivated by a need to keep an eye on m
 - Position and size customisation and configurability
 
 ## Prerequisites
-- Python 3.x
+- Python 3.12
 - pip 24.1.1
 - Windows operating system
 
@@ -26,7 +26,7 @@ The app is a personal project, which was motivated by a need to keep an eye on m
 > At the moment, the project is developed and tested specifically for Windows. Unix system support may be added in the future. 
 
 > [!IMPORTANT]
-> If you choose to use the standalone executable installation, please be aware that **the executable files may be auto-detected as false positives** (harmless files seen as a viruses) by some security vendors, [which is a common case when using python-to-exe compilers](https://www.reddit.com/r/learnpython/comments/13igjrl/nuitka_hello_world_binary_detected_as_malware_why/). Currently, I am unable to do anything about this matter, the reccomended fix is to add the file to anti-virus exceptions. I assure, that the installer distribution of the application is an exact build of the project as available in the repository. If you have any concerns about the files` integrity or security, it is encouraged to verify it by building the project from the source code yourself.
+> If you choose to use the standalone executable installer, please be aware that **the executable files may be auto-detected as false positives** (harmless files seen as a viruses) by some security vendors, [which is a common case when using python-to-exe compilers](https://www.reddit.com/r/learnpython/comments/13igjrl/nuitka_hello_world_binary_detected_as_malware_why/). I am unable to do anything about this matter, the reccomended fix is to add the file to anti-virus exceptions. I assure, that the installer distribution of the application is an exact build of the project as available in the repository. If you have any concerns about the files` integrity or security, it is encouraged to verify it by building the project from the source code yourself.
 
 ### Running Script Locally
 
@@ -72,7 +72,7 @@ The app is a personal project, which was motivated by a need to keep an eye on m
 
 Additionally, at the end of installation, a powershell script which creates a shorcut of `Dextop.exe` at `startup` directory is run. The procedure allows for **running the app at startup**. This behaviour can be disabled by deleting the shortcut from `startup` directory or disabling it using `Task Manager` in `Startup Apps` tab.
 
-Note, that running the installer will probably trigger *Windows protected your PC* window. It is a standard windows security measure, which is triggered when unknown executable is run. In order to proceed with the installation, click the `More Info` button and choose `Run anyway` option.
+Note, that running the installer may trigger *Windows protected your PC* window. It is a standard windows security measure, which is triggered when unknown executable is run. In order to proceed with the installation, click the `More Info` button and choose `Run anyway` option.
 
 ## Widget Usage Instructions
 
