@@ -68,6 +68,9 @@ class DefaultSettings:
   
   @classmethod
   def initialise_settings(cls, config_parser: ConfigParser):
+    if(not os.path.exists(Paths.APPDATA_FOLDER_PATH)):
+      os.mkdir(Paths.APPDATA_FOLDER_PATH)
+    
     for section, keys in cls.DEFAULT_SETTINGS.items():
       if section not in config_parser:
         config_parser.add_section(section)
@@ -110,6 +113,7 @@ class Colours(str, Enum):
 # ===== FILE PATHS =====
 class Paths(str, Enum):
   _appdata_path = os.getenv('APPDATA')
+  APPDATA_FOLDER_PATH = os.path.join(_appdata_path, 'dextop')
   SETTINGS_PATH = os.path.join(_appdata_path, 'dextop', 'settings.ini')
   LOGGER_PATH = os.path.join(_appdata_path, 'dextop', 'logs')
   TRAY_IMAGE_PATH = os.path.join('assets','dextop_icon.png')
